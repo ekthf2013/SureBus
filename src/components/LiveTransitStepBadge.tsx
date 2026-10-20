@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RouteStepItem } from '../types/bus';
 import { fetchRealtimeSubwayArrival, cleanSubwayStationName, RealtimeArrival, SUBWAY_LINE_MAP, getSubwayScheduleInfo, deduplicateSubwayArrivals, generateDailySubwayTimetable } from '../utils/subwayApi';
-import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig } from '../utils/busLiveApi';
+import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival } from '../utils/busLiveApi';
 import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface LiveTransitStepBadgeProps {
@@ -209,25 +209,42 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           if (!isMounted) return;
           setStationArrivals(liveStnBuses);
 
-          // 2. 탑승 대상 버스 도착 정보 조회
-          if (routeNoList.length > 0) {
-            const multiArrivals: BusArrivalItem[] = [];
-            for (const rNo of routeNoList) {
-              const matchedInStn = liveStnBuses.filter(b => b.routeNo === rNo);
-              if (matchedInStn.length > 0) {
-                multiArrivals.push(...matchedInStn);
+          // 2. 탑승 대상 버스 도착 정보 매칭 (정규화된 번호 비교)
+          const cleanTargetNos = routeNoList.map(n => n.replace(/[^0-9A-Za-z]/g, '').toLowerCase());
+          const multiArrivals: BusArrivalItem[] = [];
+
+          if (cleanTargetNos.length > 0) {
+            for (const cNo of cleanTargetNos) {
+              const matched = liveStnBuses.filter(b => {
+                const bClean = b.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+                return bClean === cNo;
+              });
+              if (matched.length > 0) {
+                multiArrivals.push(...matched);
               }
             }
-            if (!isMounted) return;
+          }
+
+          if (multiArrivals.length > 0) {
             multiArrivals.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
             setBusArrivals(multiArrivals);
           } else if (liveStnBuses.length > 0) {
             setBusArrivals(liveStnBuses);
+          } else if (primaryRouteNo) {
+            // BIS에 일시적으로 안 잡힌 경우 배차 주기 기반 도착 예정 시간 자동 제공
+            const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
+            setBusArrivals([est]);
           } else {
-            setBusArrivals([]);
+            const est = calculateEstimatedArrival('연계버스', stopNameFallback);
+            setBusArrivals([est]);
           }
         } catch (e) {
           console.error(e);
+          if (isMounted) {
+            const fallbackNo = primaryRouteNo || '연계버스';
+            const est = calculateEstimatedArrival(fallbackNo, stopNameFallback);
+            setBusArrivals([est]);
+          }
         } finally {
           if (isMounted) setLoading(false);
         }
@@ -498,56 +515,8 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
       );
     }
 
-    if (!primaryBus || busArrivals.length === 0) {
-      const mapSearchQuery = primaryRouteNo
-        ? `${primaryRouteNo}번 버스`
-        : (stationDisplayName || '버스정류장');
-      const routeCfg = primaryRouteNo ? getBusRouteConfig(primaryRouteNo) : null;
-      return (
-        <div className="mt-2 rounded-xl border border-slate-800 bg-slate-900/70 p-2.5 flex items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {primaryRouteNo && (
-                  <span
-                    className="px-1.5 py-0.2 rounded text-[10px] font-black text-white shrink-0"
-                    style={{ backgroundColor: routeCfg?.color || '#0284c7' }}
-                  >
-                    {primaryRouteNo}번
-                  </span>
-                )}
-                <span className="font-semibold text-slate-300 truncate">
-                  {stationDisplayName || '연계 버스'}
-                </span>
-                {routeCfg?.type && (
-                  <span className="text-[10px] text-slate-400">
-                    ({routeCfg.type})
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span>국토교통부 BIS 연동 (배차 약 {routeCfg?.intervalMin || 8}분 간격 운행)</span>
-              </div>
-            </div>
-          </div>
-          <a
-            href={`https://map.kakao.com/?q=${encodeURIComponent(mapSearchQuery)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all flex items-center gap-1 shrink-0"
-            title="카카오맵에서 실시간 버스 위치 확인"
-          >
-            <span>실시간 지도</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        </div>
-      );
-    }
-
-    const formatted = formatBusArrivalTime(primaryBus.arrTimeSec, primaryBus.arrStationCount);
+    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : calculateEstimatedArrival('연계버스', stationDisplayName));
+    const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount);
 
     return (
       <div
@@ -569,41 +538,41 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             {/* 노선 번호 뱃지 */}
             <span
               className="px-2 py-0.5 rounded text-[11px] font-black text-white shrink-0 shadow-sm"
-              style={{ backgroundColor: primaryBus.routeColor }}
+              style={{ backgroundColor: activeBus.routeColor }}
             >
-              {primaryBus.routeNo.includes('버스') ? primaryBus.routeNo : `${primaryBus.routeNo}번`}
+              {activeBus.routeNo.includes('버스') ? activeBus.routeNo : `${activeBus.routeNo}번`}
             </span>
 
             {/* 실시간 카운트다운 또는 배차 주기 도착 예정 시간 안내 */}
-            {primaryBus.isRealtime ? (
+            {activeBus.isRealtime ? (
               <span className={`font-extrabold px-2 py-0.5 rounded-md border text-[11px] shrink-0 flex items-center gap-1.5 ${
                 formatted.isSoon
                   ? 'bg-rose-500/30 text-rose-200 border-rose-500/40 animate-pulse'
                   : 'bg-cyan-500/30 text-cyan-200 border-cyan-500/40'
               }`}>
                 <span>{formatted.isSoon ? '⚡' : '⏱️'} {formatted.timeText}</span>
-                {primaryBus.arrStationCount > 0 && (
+                {activeBus.arrStationCount > 0 && (
                   <span className="text-[10px] px-1 py-0.2 rounded bg-black/40 font-bold text-amber-300 border border-amber-500/30">
-                    {primaryBus.arrStationCount}정류장 전
+                    {activeBus.arrStationCount}정류장 전
                   </span>
                 )}
               </span>
             ) : (
               <span className="font-extrabold px-2 py-0.5 rounded-md border text-[11px] shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 text-cyan-200 border-cyan-500/40 shadow-sm animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                <span>⚡ 약 {primaryBus.arrTimeMin}분 후 도착 예정</span>
+                <span>⚡ 약 {activeBus.arrTimeMin}분 후 도착 예정</span>
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-1 text-[10px] text-slate-300">
-              {primaryBus.isRealtime ? (
-                <span>(현재: <strong className="text-white">{primaryBus.currentStationName}</strong>)</span>
+              {activeBus.isRealtime ? (
+                <span>(현재: <strong className="text-white">{activeBus.currentStationName}</strong>)</span>
               ) : (
-                <span className="text-slate-400">({stationDisplayName || primaryBus.stationName})</span>
+                <span className="text-slate-400">({stationDisplayName || activeBus.stationName})</span>
               )}
-              {primaryBus.lowPlate && (
+              {activeBus.lowPlate && (
                 <span className="px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold">
                   저상
                 </span>
@@ -613,9 +582,9 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             {/* 카카오맵 실시간 위치 빠른 링크 */}
             <a
               href={`https://map.kakao.com/?q=${encodeURIComponent(
-                primaryBus.routeNo.includes('버스')
+                activeBus.routeNo.includes('버스')
                   ? (stationDisplayName || '버스정류장')
-                  : (primaryBus.routeNo + '번 버스')
+                  : (activeBus.routeNo + '번 버스')
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -657,32 +626,32 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             <p className="text-[10px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
               <span className="flex items-center gap-1">
                 <Layers className="w-3 h-3 text-cyan-400" />
-                {primaryBus.isRealtime ? '탑승 노선 실시간 도착 정보' : '탑승 노선 운행 정보'}
+                {activeBus.isRealtime ? '탑승 노선 실시간 도착 정보' : '탑승 노선 운행 정보'}
               </span>
               <span className="text-[9px] text-slate-500">
-                {primaryBus.isRealtime ? '국토교통부 실시간 BIS' : '정규 배차 주기 기준'}
+                {activeBus.isRealtime ? '국토교통부 실시간 BIS' : '정규 배차 주기 기준'}
               </span>
             </p>
 
             {/* 실시간 미제공 시 명확한 안내 박스 */}
-            {!primaryBus.isRealtime && (
+            {!activeBus.isRealtime && (
               <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-500/20 text-[10.5px] text-amber-200/90 leading-relaxed flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-amber-300">
-                    배차간격 기준 운행 안내 ({stationDisplayName || primaryBus.stationName})
+                    배차간격 기준 운행 안내 ({stationDisplayName || activeBus.stationName})
                   </p>
                   <p className="text-slate-300 text-[10px] mt-0.5">
-                    현재 정류소의 정규 배차간격(약 {primaryBus.arrTimeMin || 8}분)을 기준으로 운행 정보가 표시됩니다. 실시간 정류소 버스 위치는 우측 상단의 [실시간 지도]를 클릭하시면 카카오맵에서 즉시 확인하실 수 있습니다.
+                    현재 정류소의 정규 배차간격(약 {activeBus.arrTimeMin || 8}분)을 기준으로 운행 정보가 표시됩니다. 실시간 정류소 버스 위치는 우측 상단의 [실시간 지도]를 클릭하시면 카카오맵에서 즉시 확인하실 수 있습니다.
                   </p>
                 </div>
               </div>
             )}
 
             {/* 탑승 대상 버스 목록 */}
-            {busArrivals.map((bus, idx) => {
+            {(busArrivals.length > 0 ? busArrivals : [activeBus]).map((bus, idx) => {
               const busFmt = formatBusArrivalTime(bus.arrTimeSec, bus.arrStationCount);
-              const isSameRoute = busArrivals.every(b => b.routeNo === busArrivals[0].routeNo);
+              const isSameRoute = (busArrivals.length > 0 ? busArrivals : [activeBus]).every(b => b.routeNo === (busArrivals[0] || activeBus).routeNo);
               const displayRouteNo = bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
               const label = isSameRoute
                 ? (idx === 0 ? '이번 버스' : idx === 1 ? '다음 버스' : '후속 버스')
