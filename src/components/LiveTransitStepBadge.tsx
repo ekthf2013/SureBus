@@ -539,21 +539,20 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
     const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : calculateEstimatedArrival('연계버스', stationDisplayName));
     const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount, isOrigin || activeBus.isOrigin);
 
-    // 통합 전광판에 표시할 고유 버스 목록 (중복 제거 및 최적 정렬)
-    const displayBuses: BusArrivalItem[] = React.useMemo(() => {
-      const sourceList = busArrivals.length > 0 ? busArrivals : stationArrivals.length > 0 ? stationArrivals : [activeBus];
-      const seen = new Set<string>();
-      const unique: BusArrivalItem[] = [];
-      for (const b of sourceList) {
-        const key = b.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          unique.push(b);
-        }
+    // 통합 전광판에 표시할 고유 버스 목록 (React Hooks 규칙 준수를 위해 순수 계산식으로 처리)
+    const sourceList = busArrivals.length > 0 ? busArrivals : stationArrivals.length > 0 ? stationArrivals : [activeBus];
+    const seenRoutes = new Set<string>();
+    const displayBuses: BusArrivalItem[] = [];
+    for (const b of sourceList) {
+      if (!b || !b.routeNo) continue;
+      const key = String(b.routeNo).replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+      if (!seenRoutes.has(key)) {
+        seenRoutes.add(key);
+        displayBuses.push(b);
       }
-      unique.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
-      return unique.length > 0 ? unique : [activeBus];
-    }, [busArrivals, stationArrivals, activeBus]);
+    }
+    displayBuses.sort((a, b) => (a.arrTimeSec || 0) - (b.arrTimeSec || 0));
+    if (displayBuses.length === 0) displayBuses.push(activeBus);
 
     return (
       <div
@@ -610,18 +609,20 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             {busArrivals.length > 1 && (
               <div className="flex items-center gap-1 flex-wrap ml-1">
                 {busArrivals.slice(1, 4).map((otherBus, idx) => {
-                  const otherFmt = formatBusArrivalTime(otherBus.arrTimeSec, otherBus.arrStationCount);
+                  if (!otherBus || !otherBus.routeNo) return null;
+                  const otherFmt = formatBusArrivalTime(otherBus.arrTimeSec, otherBus.arrStationCount, isOrigin || otherBus.isOrigin);
+                  const otherRouteNo = String(otherBus.routeNo).includes('버스') ? otherBus.routeNo : `${otherBus.routeNo}번`;
                   return (
                     <span
-                      key={otherBus.routeId || idx}
+                      key={otherBus.routeId || `${otherBus.routeNo}-${idx}`}
                       className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-slate-900/90 border border-slate-700/70 text-slate-200 shadow-sm"
-                      title={`${otherBus.routeNo}번: ${otherBus.isRealtime ? otherFmt.fullBadgeText : `약 ${otherBus.arrTimeMin}분 후 도착 예정`}`}
+                      title={`${otherRouteNo}: ${otherBus.isRealtime ? otherFmt.fullBadgeText : `약 ${otherBus.arrTimeMin}분 후 도착 예정`}`}
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: otherBus.routeColor }}
+                        style={{ backgroundColor: otherBus.routeColor || '#0284c7' }}
                       />
-                      <span className="font-black text-white">{otherBus.routeNo}번</span>
+                      <span className="font-black text-white">{otherRouteNo}</span>
                       <span className={otherBus.isRealtime ? 'text-cyan-300 font-extrabold' : 'text-slate-300'}>
                         {otherBus.isRealtime ? `⚡ ${otherBus.arrTimeMin}분` : `약 ${otherBus.arrTimeMin}분`}
                       </span>
