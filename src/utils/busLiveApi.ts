@@ -543,23 +543,28 @@ export async function fetchLiveBusArrivals(
           });
           list.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
 
-          // 만약 특정 노선 필터링이 요청된 경우
+          // 만약 특정 노선 필터링이 요청된 경우 (예: 87, 332, 311번 등)
           if (operatingRouteNos && operatingRouteNos.length > 0) {
-            const cleanTargetNos = operatingRouteNos.map(n => n.replace(/[^0-9A-Za-z]/g, '').toLowerCase());
-            const filtered = list.filter(item => {
-              const cleanItemNo = item.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
-              return cleanTargetNos.includes(cleanItemNo);
-            });
+            const combinedList: BusArrivalItem[] = [];
 
-            // 필터링된 실시간 버스가 있으면 반환
-            if (filtered.length > 0) return filtered;
+            for (const rNo of operatingRouteNos) {
+              const cleanTarget = rNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+              const matchedRealtime = list.filter(item => {
+                const cleanItem = item.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+                return cleanItem === cleanTarget;
+              });
 
-            // 실시간 버스 목록 중 해당 노선이 잠시 배차 대기 중인 경우:
-            // 해당 노선의 도착 예정 정보를 계산하여 실시간 도착 정보와 함께 반환
-            const estimatedList = operatingRouteNos.map(rNo =>
-              calculateEstimatedArrival(rNo, stopName, resolved?.nodeId)
-            );
-            return estimatedList;
+              if (matchedRealtime.length > 0) {
+                // 해당 노선의 실시간 도착 정보 추가
+                combinedList.push(...matchedRealtime);
+              } else {
+                // 실시간 API에 현재 노선이 아직 안 잡힌 경우: 노선 배차 주기 기반 도착 예정 시간 자동 생성
+                combinedList.push(calculateEstimatedArrival(rNo, stopName, resolved?.nodeId));
+              }
+            }
+
+            combinedList.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
+            return combinedList;
           }
 
           return list;

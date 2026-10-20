@@ -46,6 +46,31 @@ export function getSubwayLineColor(lineNameOrId: string, fallbackTitle: string =
   return '#E6186C'; // 기본 8호선 핑크
 }
 
+/**
+ * 스텝 텍스트(제목, 상세, 노트 등)에서 복수 노선 번호(예: '87/332/311번', '87번, 332번', '6-1번 등')를 누락 없이 모두 추출합니다.
+ */
+export function extractBusNumbers(text: string): string[] {
+  const extracted = new Set<string>();
+
+  // 1. 슬래시나 쉼표로 묶인 복수 번호 그룹 매칭 (예: 87/332/311번, 87, 332, 311번)
+  const groupMatches = [...text.matchAll(/([0-9A-Za-z-]+(?:\s*[\/,]\s*[0-9A-Za-z-]+)+)\s*번(?!\s*출구)/g)];
+  for (const m of groupMatches) {
+    m[1].split(/[\/,]/).forEach(num => {
+      const c = num.trim().replace(/[^0-9A-Za-z-]/g, '');
+      if (c && !c.includes('출구')) extracted.add(c);
+    });
+  }
+
+  // 2. 단일 N번 버스 매칭 (예: 87번, 332번, M5107번)
+  const singleMatches = [...text.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGP]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번(?!\s*출구)/gi)];
+  for (const m of singleMatches) {
+    const c = m[1].trim();
+    if (c) extracted.add(c);
+  }
+
+  return Array.from(extracted);
+}
+
 export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step }) => {
   const [subwayArrivals, setSubwayArrivals] = useState<RealtimeArrival[]>([]);
   const [busArrivals, setBusArrivals] = useState<BusArrivalItem[]>([]);
@@ -142,30 +167,19 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
         const fullText = (step.title + ' ' + (step.subtitle || '') + ' ' + (step.note || '')).trim();
 
         // 1. 버스 번호 정밀 파싱 (step.title 우선 추출, M/G/P 광역버스 및 일반/마을버스 모두 지원)
-        // 1. 탑승 대상 버스 노선 번호 추출 (step.busNo 최우선)
+        // 1. 탑승 대상 버스 노선 번호 추출 (step.busNo 및 step.title/note/subtitle 전체에서 복수 노선 완벽 추출)
         let routeNoList: string[] = [];
         if (step.busNo) {
-          routeNoList = [step.busNo];
+          step.busNo.split(/[\/,]/).forEach(n => {
+            const clean = n.trim().replace(/[^0-9A-Za-z-]/g, '');
+            if (clean && !clean.includes('출구')) routeNoList.push(clean);
+          });
         }
 
-        // ※ '5번출구', '4번출구' 등 지하철 출구 번호는 절대 버스 번호로 매칭되지 않도록 (?!\s*출구) 부정형 전방탐색 적용
-        if (routeNoList.length === 0) {
-          const titleMatches = [...step.title.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGP]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번(?!\s*출구)/gi)];
-          routeNoList = titleMatches.map(m => m[1]);
-        }
+        // title, note, subtitle 등 전체 텍스트에서 복수 노선(87/332/311번 등) 추출
+        const extractedFromText = extractBusNumbers(`${step.title} ${step.note || ''} ${step.subtitle || ''}`);
+        routeNoList = Array.from(new Set([...routeNoList, ...extractedFromText]));
 
-        if (routeNoList.length === 0) {
-          const allMatches = [...fullText.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGP]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번(?!\s*출구)/gi)];
-          routeNoList = allMatches.map(m => m[1]);
-        }
-
-        if (routeNoList.length === 0) {
-          const numMatch = step.title.match(/\b([MGP]?[0-9]{1,4}(?:-[0-9A-Za-z]+)?)\s*번/i);
-          if (numMatch) routeNoList = [numMatch[1]];
-        }
-
-        // 특정 노선 번호가 없는 일반 연계 버스는 빈 배열로 둠 (절대 87번 등으로 임의 왜곡하지 않음!)
-        routeNoList = Array.from(new Set(routeNoList));
         const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
 
         // 2. 승차 정류장 판별 및 고유 정류소 ID 추출
@@ -209,18 +223,24 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           if (!isMounted) return;
           setStationArrivals(liveStnBuses);
 
-          // 2. 탑승 대상 버스 도착 정보 매칭 (정규화된 번호 비교)
+          // 2. 탑승 대상 버스 도착 정보 매칭 (모든 노선 각각의 도착 정보 보장)
           const cleanTargetNos = routeNoList.map(n => n.replace(/[^0-9A-Za-z]/g, '').toLowerCase());
           const multiArrivals: BusArrivalItem[] = [];
 
           if (cleanTargetNos.length > 0) {
-            for (const cNo of cleanTargetNos) {
+            for (let i = 0; i < routeNoList.length; i++) {
+              const rNo = routeNoList[i];
+              const cNo = cleanTargetNos[i];
               const matched = liveStnBuses.filter(b => {
                 const bClean = b.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
                 return bClean === cNo;
               });
+
               if (matched.length > 0) {
                 multiArrivals.push(...matched);
+              } else {
+                // 해당 노선이 BIS에 아직 안 떴더라도 배차 주기 기반 도착 예정 정보를 반드시 채움
+                multiArrivals.push(calculateEstimatedArrival(rNo, stopNameFallback));
               }
             }
           }
@@ -531,11 +551,11 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           }}
           className="p-2 flex flex-wrap items-center justify-between gap-1.5 cursor-pointer hover:bg-white/5 transition-colors"
         >
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0" />
             <Bus className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             
-            {/* 노선 번호 뱃지 */}
+            {/* 단일 노선 또는 가장 빠른 첫 번째 버스 뱃지 */}
             <span
               className="px-2 py-0.5 rounded text-[11px] font-black text-white shrink-0 shadow-sm"
               style={{ backgroundColor: activeBus.routeColor }}
@@ -563,9 +583,34 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
                 <span>⚡ 약 {activeBus.arrTimeMin}분 후 도착 예정</span>
               </span>
             )}
+
+            {/* 🔥 탑승 가능한 다른 노선들이 있는 경우 (예: 87, 332, 311번 등) 다른 버스들의 도착 시간 칩도 나란히 표시 */}
+            {busArrivals.length > 1 && (
+              <div className="flex items-center gap-1 flex-wrap ml-1">
+                {busArrivals.slice(1, 4).map((otherBus, idx) => {
+                  const otherFmt = formatBusArrivalTime(otherBus.arrTimeSec, otherBus.arrStationCount);
+                  return (
+                    <span
+                      key={otherBus.routeId || idx}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-slate-900/90 border border-slate-700/70 text-slate-200 shadow-sm"
+                      title={`${otherBus.routeNo}번: ${otherBus.isRealtime ? otherFmt.fullBadgeText : `약 ${otherBus.arrTimeMin}분 후 도착 예정`}`}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: otherBus.routeColor }}
+                      />
+                      <span className="font-black text-white">{otherBus.routeNo}번</span>
+                      <span className={otherBus.isRealtime ? 'text-cyan-300 font-extrabold' : 'text-slate-300'}>
+                        {otherBus.isRealtime ? `⚡ ${otherBus.arrTimeMin}분` : `약 ${otherBus.arrTimeMin}분`}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-1 text-[10px] text-slate-300">
               {activeBus.isRealtime ? (
                 <span>(현재: <strong className="text-white">{activeBus.currentStationName}</strong>)</span>
@@ -707,7 +752,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
                 <div className="flex items-center justify-between pb-1 text-[10.5px]">
                   <span className="font-extrabold text-white flex items-center gap-1.5">
                     <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                    <span>🚏 {stationDisplayName || primaryBus.stationName} 실시간 도착 전광판</span>
+                    <span>🚏 {stationDisplayName || activeBus.stationName} 실시간 도착 전광판</span>
                   </span>
                   <span className="text-[9.5px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
@@ -760,7 +805,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
                 <div className="flex items-center justify-between pb-1 text-[10.5px]">
                   <span className="font-extrabold text-white flex items-center gap-1.5">
                     <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>🚏 {stationDisplayName || primaryBus.stationName} 연계 노선 운행 정보</span>
+                    <span>🚏 {stationDisplayName || activeBus.stationName} 연계 노선 운행 정보</span>
                   </span>
                   <span className="text-[9.5px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
                     배차 주기 연동 ({busArrivals.length}개 노선)
