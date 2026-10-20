@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RouteStepItem } from '../types/bus';
 import { fetchRealtimeSubwayArrival, cleanSubwayStationName, RealtimeArrival, SUBWAY_LINE_MAP, getSubwayScheduleInfo, deduplicateSubwayArrivals, generateDailySubwayTimetable } from '../utils/subwayApi';
-import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival } from '../utils/busLiveApi';
+import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival, isOriginStation } from '../utils/busLiveApi';
 import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface LiveTransitStepBadgeProps {
@@ -535,8 +535,25 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
       );
     }
 
+    const isOrigin = isOriginStation(stationDisplayName) || isOriginStation(step.boardingStopName || '');
     const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : calculateEstimatedArrival('연계버스', stationDisplayName));
-    const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount);
+    const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount, isOrigin || activeBus.isOrigin);
+
+    // 통합 전광판에 표시할 고유 버스 목록 (중복 제거 및 최적 정렬)
+    const displayBuses: BusArrivalItem[] = React.useMemo(() => {
+      const sourceList = busArrivals.length > 0 ? busArrivals : stationArrivals.length > 0 ? stationArrivals : [activeBus];
+      const seen = new Set<string>();
+      const unique: BusArrivalItem[] = [];
+      for (const b of sourceList) {
+        const key = b.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(b);
+        }
+      }
+      unique.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
+      return unique.length > 0 ? unique : [activeBus];
+    }, [busArrivals, stationArrivals, activeBus]);
 
     return (
       <div
@@ -580,7 +597,12 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             ) : (
               <span className="font-extrabold px-2 py-0.5 rounded-md border text-[11px] shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 text-cyan-200 border-cyan-500/40 shadow-sm animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                <span>⚡ 약 {activeBus.arrTimeMin}분 후 도착 예정</span>
+                <span>⚡ {formatted.timeText}</span>
+                {isOrigin && (
+                  <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-cyan-900/80 font-bold text-cyan-200 border border-cyan-400/40">
+                    출발 대기
+                  </span>
+                )}
               </span>
             )}
 
@@ -665,186 +687,90 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           </div>
         </div>
 
-        {/* Expanded: 버스 운행 상세 목록 및 해당 정류소 실시간 도착 전광판 */}
+        {/* Expanded: 정류소 실시간 도착 전광판 (중복 제거 단일 통합 보드) */}
         {expanded && (
           <div className="p-2.5 pt-1 border-t border-slate-800/80 bg-slate-950/80 space-y-2.5 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[10px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
-              <span className="flex items-center gap-1">
-                <Layers className="w-3 h-3 text-cyan-400" />
-                {activeBus.isRealtime ? '탑승 노선 실시간 도착 정보' : '탑승 노선 운행 정보'}
+            <div className="flex items-center justify-between pb-1 border-b border-slate-800 text-[10.5px]">
+              <span className="font-extrabold text-white flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>🚏 {stationDisplayName || activeBus.stationName} 실시간 도착 전광판</span>
               </span>
-              <span className="text-[9px] text-slate-500">
-                {activeBus.isRealtime ? '국토교통부 실시간 BIS' : '정규 배차 주기 기준'}
+              <span className="text-[9.5px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                {displayBuses.some(b => b.isRealtime) ? '실시간 BIS 연동' : '배차 주기 연동'} ({displayBuses.length}개 노선)
               </span>
-            </p>
+            </div>
 
-            {/* 실시간 미제공 시 명확한 안내 박스 */}
+            {/* 실시간 미제공 시 또는 기점 안내 박스 */}
             {!activeBus.isRealtime && (
               <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-500/20 text-[10.5px] text-amber-200/90 leading-relaxed flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-amber-300">
-                    배차간격 기준 운행 안내 ({stationDisplayName || activeBus.stationName})
+                    {isOrigin
+                      ? `출발 기점 운행 안내 (${stationDisplayName || activeBus.stationName})`
+                      : `배차간격 기준 운행 안내 (${stationDisplayName || activeBus.stationName})`}
                   </p>
                   <p className="text-slate-300 text-[10px] mt-0.5">
-                    현재 정류소의 정규 배차간격(약 {activeBus.arrTimeMin || 8}분)을 기준으로 운행 정보가 표시됩니다. 실시간 정류소 버스 위치는 우측 상단의 [실시간 지도]를 클릭하시면 카카오맵에서 즉시 확인하실 수 있습니다.
+                    {isOrigin
+                      ? `본 정류소는 노선 출발 기점(회차지)입니다. 버스가 기점에서 출발 대기 후 정규 배차간격(약 ${activeBus.arrTimeMin || 8}분)에 맞춰 순차 출발합니다.`
+                      : `현재 정류소의 정규 배차간격(약 ${activeBus.arrTimeMin || 8}분)을 기준으로 운행 정보가 표시됩니다. 실시간 버스 위치는 우측 상단의 [실시간 지도]를 클릭하시면 카카오맵에서 즉시 확인하실 수 있습니다.`}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* 탑승 대상 버스 목록 */}
-            {(busArrivals.length > 0 ? busArrivals : [activeBus]).map((bus, idx) => {
-              const busFmt = formatBusArrivalTime(bus.arrTimeSec, bus.arrStationCount);
-              const isSameRoute = (busArrivals.length > 0 ? busArrivals : [activeBus]).every(b => b.routeNo === (busArrivals[0] || activeBus).routeNo);
-              const displayRouteNo = bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
-              const label = isSameRoute
-                ? (idx === 0 ? '이번 버스' : idx === 1 ? '다음 버스' : '후속 버스')
-                : `${displayRouteNo} (${bus.routeType})`;
+            {/* 단일 통합 노선 도착 목록 (중복 없이 1회만 렌더링) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {displayBuses.map((bus, idx) => {
+                const busFmt = formatBusArrivalTime(bus.arrTimeSec, bus.arrStationCount, isOrigin || bus.isOrigin);
+                const displayRouteNo = bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
 
-              return (
-                <div
-                  key={bus.routeId || idx}
-                  className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/90 border border-slate-800/80 text-[11px]"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="px-1.5 py-0.5 rounded text-[10px] font-black text-white shrink-0 shadow-sm"
-                      style={{ backgroundColor: bus.routeColor }}
-                    >
-                      {displayRouteNo}
-                    </span>
-                    <span className="font-bold text-slate-200">
-                      {label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {bus.isRealtime ? (
-                      <>
-                        <span className={`font-extrabold ${idx === 0 ? 'text-cyan-300' : 'text-slate-300'}`}>
-                          ⏱️ {busFmt.timeText}
-                        </span>
-                        {bus.arrStationCount > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-bold border border-slate-700">
-                            {bus.arrStationCount}정류장 전
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="font-bold text-cyan-300">
-                        ⚡ 약 {bus.arrTimeMin}분 후 도착 예정
+                return (
+                  <div
+                    key={bus.routeId || `${bus.routeNo}-${idx}`}
+                    className="flex items-center justify-between p-2 px-2.5 rounded-lg bg-slate-900/95 border border-slate-800 text-[11px] hover:border-cyan-500/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[10.5px] font-black text-white shrink-0 shadow-sm"
+                        style={{ backgroundColor: bus.routeColor }}
+                      >
+                        {displayRouteNo}
                       </span>
-                    )}
-                    {bus.lowPlate && (
-                      <span className="px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold">
-                        저상
+                      <span className="text-slate-400 text-[10px] truncate max-w-[85px]">
+                        {bus.routeType}
                       </span>
-                    )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* 도착/출발 시간 표시 */}
+                      <span className="font-extrabold text-cyan-300 text-[11px]">
+                        {bus.isRealtime ? `⚡ ${bus.arrTimeMin}분 후` : (isOrigin || bus.isOrigin) ? `⚡ 약 ${bus.arrTimeMin}분 후 출발` : `⚡ 약 ${bus.arrTimeMin}분 후`}
+                      </span>
+
+                      {/* 기점 정류소인 경우 '출발 대기' 뱃지 표시, 실시간인 경우 'N전' 표시 */}
+                      {(isOrigin || bus.isOrigin) ? (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/40">
+                          출발 대기
+                        </span>
+                      ) : bus.isRealtime && bus.arrStationCount > 0 ? (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-amber-300 font-bold border border-slate-700">
+                          {bus.arrStationCount}전
+                        </span>
+                      ) : null}
+
+                      {/* 저상버스 뱃지 */}
+                      {bus.lowPlate && (
+                        <span className="text-[8.5px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                          저상
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-
-            {/* 🔥 정류소 전체 실시간 버스 도착 전광판 (웹사이트 화면에 직접 렌더링) */}
-            {stationArrivals.length > 0 && (
-              <div className="mt-2.5 pt-2 border-t border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between pb-1 text-[10.5px]">
-                  <span className="font-extrabold text-white flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                    <span>🚏 {stationDisplayName || activeBus.stationName} 실시간 도착 전광판</span>
-                  </span>
-                  <span className="text-[9.5px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                    {stationArrivals.some(b => b.isRealtime) ? '실시간 BIS 연동' : '실시간 배차 연동'} ({stationArrivals.length}대 운행 중)
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {stationArrivals.map((stnBus) => (
-                    <div
-                      key={stnBus.routeId}
-                      className="flex items-center justify-between p-1.5 px-2 rounded-lg bg-slate-900/95 border border-slate-800 text-[11px] hover:border-cyan-500/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className="px-1.5 py-0.2 rounded text-[10px] font-black text-white shrink-0 shadow-sm"
-                          style={{ backgroundColor: stnBus.routeColor }}
-                        >
-                          {stnBus.routeNo}번
-                        </span>
-                        <span className="text-slate-400 text-[10px] truncate max-w-[85px]">
-                          {stnBus.routeType}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-black text-cyan-300 text-[11px]">
-                          ⚡ {stnBus.arrTimeMin}분 후
-                        </span>
-                        {stnBus.arrStationCount > 0 && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-amber-300 font-bold border border-slate-700">
-                            {stnBus.arrStationCount}전
-                          </span>
-                        )}
-                        {stnBus.lowPlate && (
-                          <span className="text-[8.5px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-                            저상
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 🔥 정류소 연계 버스 도착 전광판 (실시간 BIS 대기 또는 복수 노선 배차 시) */}
-            {stationArrivals.length === 0 && busArrivals.length > 1 && (
-              <div className="mt-2.5 pt-2 border-t border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between pb-1 text-[10.5px]">
-                  <span className="font-extrabold text-white flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>🚏 {stationDisplayName || activeBus.stationName} 연계 노선 운행 정보</span>
-                  </span>
-                  <span className="text-[9.5px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
-                    배차 주기 연동 ({busArrivals.length}개 노선)
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {busArrivals.map((b) => (
-                    <div
-                      key={b.routeId}
-                      className="flex items-center justify-between p-1.5 px-2 rounded-lg bg-slate-900/95 border border-slate-800 text-[11px] hover:border-cyan-500/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className="px-1.5 py-0.2 rounded text-[10px] font-black text-white shrink-0 shadow-sm"
-                          style={{ backgroundColor: b.routeColor }}
-                        >
-                          {b.routeNo.includes('버스') ? b.routeNo : `${b.routeNo}번`}
-                        </span>
-                        <span className="text-slate-400 text-[10px] truncate max-w-[85px]">
-                          {b.routeType}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-bold text-cyan-300 text-[11px]">
-                          ⚡ 약 {b.arrTimeMin}분 후
-                        </span>
-                        {b.lowPlate && (
-                          <span className="text-[8.5px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-                            저상
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

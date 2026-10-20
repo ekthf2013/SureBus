@@ -20,14 +20,33 @@ export interface BusArrivalItem {
   crowded?: '여유' | '보통' | '혼잡';
   updatedAt: string;
   isRealtime: boolean; // 실제 공공데이터 API 실시간 수신 여부
+  isOrigin?: boolean; // 기점(차고지/회차점) 출발 대기 정류소 여부
+}
+
+/**
+ * 정류소가 노선의 출발 기점(차고지/회차점)인지 판별합니다.
+ * (판교 제2밸리 사옥 인근: 텔레칩스, 기업지원허브, 판교제2테크노밸리, 인피니티타워 등은 87, 332, 382번 등의 출발 기점입니다)
+ */
+export function isOriginStation(stopName: string): boolean {
+  const n = (stopName || '').toLowerCase().replace(/\s+/g, '');
+  return (
+    n.includes('텔레칩스') ||
+    n.includes('기업지원허브') ||
+    n.includes('판교제2') ||
+    n.includes('인피니티타워') ||
+    n.includes('사옥') ||
+    n.includes('lh판교') ||
+    n.includes('차고지') ||
+    n.includes('기점') ||
+    n.includes('종점')
+  );
 }
 
 /**
  * 실시간 버스 도착 시간(초)을 "2분 40초 후" 및 "N정류장 전" 형태로 정밀 포맷팅합니다.
- * @param sec 도착 예정 초 (예: 200 -> 3분 20초 후, 160 -> 2분 40초 후)
- * @param stationCount 남은 정류장 수 (예: 2 -> 2정류장 전)
+ * 기점인 경우 '출발 대기'로 올바르게 표시합니다.
  */
-export function formatBusArrivalTime(sec: number, stationCount?: number): {
+export function formatBusArrivalTime(sec: number, stationCount?: number, isOrigin?: boolean): {
   timeText: string;
   stationText: string;
   fullBadgeText: string;
@@ -39,16 +58,16 @@ export function formatBusArrivalTime(sec: number, stationCount?: number): {
 
   let timeText = '';
   if (totalSec <= 30) {
-    timeText = '곧 도착';
+    timeText = isOrigin ? '곧 출발' : '곧 도착';
   } else if (mins === 0) {
-    timeText = `${remainingSec}초 후`;
+    timeText = isOrigin ? `${remainingSec}초 후 출발` : `${remainingSec}초 후`;
   } else if (remainingSec === 0) {
-    timeText = `${mins}분 후`;
+    timeText = isOrigin ? `${mins}분 후 출발` : `${mins}분 후`;
   } else {
-    timeText = `${mins}분 ${remainingSec}초 후`;
+    timeText = isOrigin ? `${mins}분 ${remainingSec}초 후 출발` : `${mins}분 ${remainingSec}초 후`;
   }
 
-  const stationText = stationCount ? `${stationCount}정류장 전` : '';
+  const stationText = isOrigin ? '출발 대기' : (stationCount && stationCount > 0 ? `${stationCount}정류장 전` : '');
   const fullBadgeText = stationText ? `${timeText} (${stationText})` : timeText;
   const isSoon = totalSec <= 180;
 
@@ -452,7 +471,11 @@ export function calculateEstimatedArrival(
   let remainSec = intervalSec - ((totalSecOfDay + offsetSec) % intervalSec);
   if (remainSec < 60) remainSec += intervalSec; // 최소 1분 이상
   const arrTimeMin = Math.max(1, Math.round(remainSec / 60));
-  const arrStationCount = Math.max(1, Math.min(5, Math.ceil(arrTimeMin / 2.2)));
+
+  const isOrigin = isOriginStation(stopName);
+  // 기점 정류소이거나 배차 추정인 경우: 인위적인 '4전', '5전' 가짜 정류장 수를 붙이지 않고, 기점은 0 및 '기점 대기'로 표시
+  const arrStationCount = 0;
+  const currentStationName = isOrigin ? '기점 대기 (출발 예정)' : `운행 중 (배차 ${cfg.intervalMin}분)`;
 
   return {
     routeId: `est-${routeNo}-${arrTimeMin}`,
@@ -462,13 +485,14 @@ export function calculateEstimatedArrival(
     arrTimeSec: remainSec,
     arrTimeMin: arrTimeMin,
     arrStationCount: arrStationCount,
-    currentStationName: `운행 중 (배차 ${cfg.intervalMin}분)`,
+    currentStationName: currentStationName,
     stationName: stopName || '인근 버스정류장',
     stationId: stationId || 'STATION',
     lowPlate: rNoIsLowPlate(routeNo),
     crowded: '보통',
     updatedAt: nowStr,
-    isRealtime: false
+    isRealtime: false,
+    isOrigin: isOrigin
   };
 }
 
