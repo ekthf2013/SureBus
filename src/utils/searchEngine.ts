@@ -3,6 +3,7 @@ import { RouteData, STATION_COORDS } from '../data/initialBusData';
 import { getHaversineDistanceMeters, estimateWalkMinutes, parseTimeToMinutes, minutesToTimeString, subtractMinutesFromTime, addMinutesToTime } from './distance';
 import { SUBWAY_NETWORK_HUBS, SubwayStationInfo, buildSubwayRouteSteps, calculateSubwayRoute, normalizeStationName } from './subwayNetwork';
 import { findConnectingBus, findLocalConnectingBus } from './connectingBusData';
+import { getCachedFeederBus } from './kakaoTransitApi';
 
 // 통근버스 요금 (일반 대중교통과 환승 할인 불가)
 const COMMUTE_BUS_FARE = 1500;
@@ -378,7 +379,7 @@ function formatViaStops(stops: string[]): string {
 }
 
 // 가장 가까운 지하철 허브 찾기
-function findNearestSubwayHub(originLat: number, originLng: number, originName: string): SubwayStationInfo | null {
+export function findNearestSubwayHub(originLat: number, originLng: number, originName: string): SubwayStationInfo | null {
   if (!originName && (originLat === 0 && originLng === 0)) return null;
 
   // 1. 호선 명칭 및 부가 텍스트 제거하여 순수 역명 후보 추출
@@ -464,13 +465,15 @@ export function getOriginAccess(originLat: number, originLng: number, originName
       headerPrefix: `[${originName}] 도보 ➔ ${hub.name}`
     };
   } else {
-    // 800m 이상: 거주지 앞 시내/마을버스 연계 (평균 22km/h + 정류장 대기 4분)
-    const busMins = Math.min(35, Math.round(distToHubMeters / 350) + 4);
+    // 800m 이상: 거주지 앞 시내/마을버스 연계 (카카오맵 동적 정류장 및 실시간 운행 버스 우선 연동)
+    const cachedFeeder = getCachedFeederBus(originLat, originLng, hub.lat, hub.lng);
+    const busMins = cachedFeeder ? cachedFeeder.durationMinutes : Math.min(35, Math.round(distToHubMeters / 350) + 4);
     const localBus = findLocalConnectingBus(originName, hub.name, { lat: originLat, lng: originLng });
-    const busLineDesc = localBus.busLineDesc;
-    const boardingName = localBus.boardingName || `${originName} 인근 정류장`;
-    const dropoffName = localBus.dropoffName || `${hub.name} 정류장`;
-    const busNo = localBus.busNo;
+    const busLineDesc = cachedFeeder ? cachedFeeder.busLineDesc : localBus.busLineDesc;
+    const boardingName = cachedFeeder ? cachedFeeder.startStopName : (localBus.boardingName || `${originName} 인근 정류장`);
+    const dropoffName = cachedFeeder ? cachedFeeder.endStopName : (localBus.dropoffName || `${hub.name} 정류장`);
+    const busNo = cachedFeeder ? cachedFeeder.busNo : localBus.busNo;
+    const coords = cachedFeeder?.coords || { lat: originLat, lng: originLng };
 
     return {
       minutes: busMins,
@@ -485,7 +488,7 @@ export function getOriginAccess(originLat: number, originLng: number, originName
       boardingStopName: boardingName,
       dropoffStopName: dropoffName,
       busNo,
-      coords: { lat: originLat, lng: originLng }
+      coords
     };
   }
 }
@@ -525,12 +528,14 @@ export function getDestAccess(destLat: number, destLng: number, destName: string
     };
   } else {
     // 800m 이상: 시내/마을버스 환승 귀가
-    const busMins = Math.min(35, Math.round(distToDestMeters / 350) + 4);
+    const cachedFeeder = getCachedFeederBus(destLat, destLng, dropoffLat, dropoffLng);
+    const busMins = cachedFeeder ? cachedFeeder.durationMinutes : Math.min(35, Math.round(distToDestMeters / 350) + 4);
     const localBus = findLocalConnectingBus(destName, dropoffName, { lat: destLat, lng: destLng });
-    const busLineDesc = localBus.busLineDesc;
+    const busLineDesc = cachedFeeder ? cachedFeeder.busLineDesc : localBus.busLineDesc;
     const boardingName = `${dropoffName} 버스환승정류장`;
-    const destStopName = localBus.boardingName || `${destName} 앞 정류소`;
-    const busNo = localBus.busNo;
+    const destStopName = cachedFeeder ? cachedFeeder.startStopName : (localBus.boardingName || `${destName} 앞 정류소`);
+    const busNo = cachedFeeder ? cachedFeeder.busNo : localBus.busNo;
+    const coords = cachedFeeder?.coords || { lat: destLat, lng: destLng };
 
     return {
       minutes: busMins,
@@ -545,7 +550,7 @@ export function getDestAccess(destLat: number, destLng: number, destName: string
       boardingStopName: boardingName,
       dropoffStopName: destStopName,
       busNo,
-      coords: { lat: destLat, lng: destLng }
+      coords
     };
   }
 }
@@ -724,6 +729,13 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
                 return false;
               });
               if (isWorseHub) return;
+
+              // 4) 억지로 통근/셔틀 버스 타기 위한 불필요한 역주행 및 우회 원천 차단:
+              // 판교역/사옥 방향 직행 전철 소요시간 대비 15분 이상 더 멀어지는 허브는 배제 (없으면 대중교통 이용)
+              const directToPangyo = calculateSubwayRoute(nearestSubwayHub.name, '판교역');
+              if (directToPangyo && transitInfo.minutes > directToPangyo.minutes + 15) {
+                return;
+              }
 
               const hqArrivalTimeStr = trip.times["도착(사옥)"] || trip.times["사옥"] || addMinutesToTime(deptTimeAtHub, 30);
               const hqArrivalMins = parseTimeToMinutes(hqArrivalTimeStr);

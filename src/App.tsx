@@ -11,9 +11,9 @@ import { FavoritesManager } from './components/FavoritesManager';
 
 import { SearchParams, RouteCandidate, UserFavorite } from './types/bus';
 import { INITIAL_ROUTES } from './data/initialBusData';
-import { calculateOptimalRoutes } from './utils/searchEngine';
+import { calculateOptimalRoutes, findNearestSubwayHub } from './utils/searchEngine';
 import { fetchOdsayCandidates } from './utils/transitRouter';
-import { fetchKakaoTransitCandidates } from './utils/kakaoTransitApi';
+import { fetchKakaoTransitCandidates, fetchDynamicFeederBus } from './utils/kakaoTransitApi';
 import { Bus, PhoneCall, Sparkles, Navigation, Info } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -54,7 +54,40 @@ export const App: React.FC = () => {
     if (searchParams.filters.usePublicTransit && !searchParams.filters.useCompanyBusOnly && searchParams.originName) {
       let isSubscribed = true;
 
-      // 카카오 공식 대중교통 경로 검색 (주변 정류장 및 실시간 운행 버스 100% 동적 조회)
+      // A. 카카오 API로 집 앞 ➔ 거점 전철역 간 연계 버스(Feeder Bus) 동적 조회 및 로컬 경로 자동 보완
+      const nearestHub = findNearestSubwayHub(searchParams.originLat, searchParams.originLng, searchParams.originName);
+      if (nearestHub) {
+        fetchDynamicFeederBus(searchParams.originLat, searchParams.originLng, nearestHub.lat, nearestHub.lng)
+          .then((feeder) => {
+            if (!isSubscribed || !feeder) return;
+            setCandidates((prev) => {
+              return prev.map(cand => {
+                const firstStep = cand.steps[0];
+                if (firstStep && firstStep.type === 'public_bus' && cand.id.startsWith('hub-transit-')) {
+                  return {
+                    ...cand,
+                    steps: [
+                      {
+                        ...firstStep,
+                        title: `[집 앞 정류장] ${feeder.startStopName} 출발 ➔ ${nearestHub.name} 버스 이동 (${feeder.busLineDesc})`,
+                        subtitle: `${feeder.startStopName} ➔ ${feeder.endStopName} (${feeder.busLineDesc}, 약 ${feeder.durationMinutes}분)`,
+                        boardingStopName: feeder.startStopName,
+                        dropoffStopName: feeder.endStopName,
+                        busNo: feeder.busNo,
+                        coords: feeder.coords || firstStep.coords
+                      },
+                      ...cand.steps.slice(1)
+                    ]
+                  };
+                }
+                return cand;
+              });
+            });
+          })
+          .catch(() => {});
+      }
+
+      // B. 카카오 공식 대중교통 경로 검색 (주변 정류장 및 실시간 운행 버스 100% 동적 조회)
       fetchKakaoTransitCandidates(searchParams)
         .then((kakaoCandidates) => {
           if (!isSubscribed || !kakaoCandidates || kakaoCandidates.length === 0) return;
@@ -62,7 +95,25 @@ export const App: React.FC = () => {
           setCandidates((prev) => {
             const nonKakao = prev.filter((c) => !c.id.startsWith('kakao-transit-candidate-'));
             const merged = [...kakaoCandidates, ...nonKakao];
-            merged.sort((a, b) => a.score - b.score);
+
+            // 1. 통근/셔틀 버스 우선순위 및 현실적인 추천 정렬
+            // - 사내 통근/셔틀 버스를 이용할 수 있고 소요시간이 최적 대중교통 대비 합리적인 경우(15분 이내) 최우선 추천 (BEST)
+            // - 만약 셔틀/통근 버스가 없거나, 억지로 타려고 과도하게 우회해야 하는 경우(15분 이상 지연) 직통 대중교통 우선 추천
+            const minDuration = Math.min(...merged.map((c) => c.totalDurationMinutes));
+
+            merged.sort((a, b) => {
+              const aIsCompany = a.routeCategory === 'company_only' || a.routeCategory === 'transit_hybrid';
+              const bIsCompany = b.routeCategory === 'company_only' || b.routeCategory === 'transit_hybrid';
+
+              const aReasonable = aIsCompany && a.totalDurationMinutes <= minDuration + 15;
+              const bReasonable = bIsCompany && b.totalDurationMinutes <= minDuration + 15;
+
+              if (aReasonable && !bReasonable) return -1;
+              if (!aReasonable && bReasonable) return 1;
+
+              return a.score - b.score;
+            });
+
             if (merged.length > 0) {
               merged.forEach(c => {
                 c.badges = c.badges.filter(b => b !== 'recommend');
