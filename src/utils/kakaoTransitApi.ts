@@ -24,11 +24,27 @@ const feederCache = new Map<string, FeederBusInfo>();
 export function getCachedFeederBus(
   originLat: number,
   originLng: number,
-  hubLat: number,
-  hubLng: number
+  hubLat?: number,
+  hubLng?: number
 ): FeederBusInfo | null {
-  const key = `${originLat.toFixed(3)},${originLng.toFixed(3)}->${hubLat.toFixed(3)},${hubLng.toFixed(3)}`;
-  return feederCache.get(key) || null;
+  if (hubLat !== undefined && hubLng !== undefined && hubLat !== 0 && hubLng !== 0) {
+    const key = `${originLat.toFixed(3)},${originLng.toFixed(3)}->${hubLat.toFixed(3)},${hubLng.toFixed(3)}`;
+    const found = feederCache.get(key);
+    if (found) return found;
+  }
+  // If exact key not found or hub coordinates omitted, search by origin proximity (~1.5km)
+  for (const [key, val] of feederCache.entries()) {
+    const parts = key.split('->');
+    if (parts.length > 0) {
+      const [oLatStr, oLngStr] = parts[0].split(',');
+      const oLat = parseFloat(oLatStr);
+      const oLng = parseFloat(oLngStr);
+      if (Math.abs(oLat - originLat) < 0.015 && Math.abs(oLng - originLng) < 0.015) {
+        return val;
+      }
+    }
+  }
+  return null;
 }
 
 function getKakaoRestKey(): string {

@@ -190,7 +190,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           });
         }
 
-        const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '10';
+        const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
 
         // 2. 승차 정류장 판별 및 고유 정류소 ID 추출
         const stationIdMatch = (step.detailLocation || step.boardingStopName || '').match(/정류소\s*ID:\s*(\d+)/i);
@@ -265,18 +265,17 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
             setBusArrivals([est]);
           } else {
-            const localFallback = findLocalConnectingBus(stopNameFallback, step.dropoffStopName || '', step.coords);
-            const fallbackNo = localFallback.busNo.split(/[\/,]/)[0] || '10';
-            const est = calculateEstimatedArrival(fallbackNo, stopNameFallback);
-            setBusArrivals([est]);
+            setBusArrivals([]);
           }
         } catch (e) {
           console.error(e);
           if (isMounted) {
-            const localFallback = findLocalConnectingBus(stopNameFallback, step.dropoffStopName || '', step.coords);
-            const fallbackNo = primaryRouteNo || localFallback.busNo.split(/[\/,]/)[0] || '10';
-            const est = calculateEstimatedArrival(fallbackNo, stopNameFallback);
-            setBusArrivals([est]);
+            if (primaryRouteNo) {
+              const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
+              setBusArrivals([est]);
+            } else {
+              setBusArrivals([]);
+            }
           }
         } finally {
           if (isMounted) setLoading(false);
