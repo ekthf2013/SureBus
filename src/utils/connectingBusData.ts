@@ -256,12 +256,9 @@ export function findLocalConnectingBus(
     }
   }
 
-  // 2. 캐시 조회 전 또는 로딩 중 동적 기본값 (가짜 특정 버스 번호 하드코딩 배제)
-  // 정류소 명칭은 사용자가 입력한 지명 기반으로 안전하게 구성하고, 
-  // 실제 버스 번호는 카카오 대중교통 API 및 실시간 BIS 응답 수신 시 동적으로 채워집니다.
   return {
     busNo: '',
-    busLineDesc: '시내·마을버스 (카카오맵 실시간 탐색)',
+    busLineDesc: '',
     boardingName: `${cleanName} 인근 정류장`,
     dropoffName: `${cleanHub} 정류장`
   };

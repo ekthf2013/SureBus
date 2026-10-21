@@ -539,7 +539,34 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
     }
 
     const isOrigin = isOriginStation(stationDisplayName) || isOriginStation(step.boardingStopName || '');
-    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : calculateEstimatedArrival('연계버스', stationDisplayName));
+    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : (busArrivals[0] || stationArrivals[0]));
+
+    // 버스 번호도 없고 정류소 실시간 버스도 전혀 없는 경우: 가짜 버스(10번 등)를 날조하지 않고 정직하게 '도착 정보 없음' 안내
+    if (!activeBus) {
+      return (
+        <div className="mt-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-xs text-slate-400 flex items-center justify-between gap-2 shadow-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2">
+            <Bus className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <span className="font-semibold text-slate-300">🚏 {stationDisplayName || '인근 정류장'}</span>
+            <span className="text-[11px] text-amber-300/80 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
+              실시간 도착 정보 없음
+            </span>
+          </div>
+          <a
+            href={`https://map.kakao.com/?q=${encodeURIComponent(stationDisplayName || '버스정류장')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all flex items-center gap-1 shadow-sm"
+            title="카카오맵에서 정류소 및 버스 실시간 확인"
+          >
+            <span>지도에서 확인</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        </div>
+      );
+    }
+
     const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount, isOrigin || activeBus.isOrigin);
 
     // 통합 전광판에 표시할 고유 버스 목록 (React Hooks 규칙 준수를 위해 순수 계산식으로 처리)
@@ -577,9 +604,9 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             {/* 단일 노선 또는 가장 빠른 첫 번째 버스 뱃지 */}
             <span
               className="px-2 py-0.5 rounded text-[11px] font-black text-white shrink-0 shadow-sm"
-              style={{ backgroundColor: activeBus.routeColor }}
+              style={{ backgroundColor: activeBus.routeColor || '#0284c7' }}
             >
-              {activeBus.routeNo === '연계버스' ? '시내 10번' : activeBus.routeNo.includes('버스') ? activeBus.routeNo : `${activeBus.routeNo}번`}
+              {activeBus.routeNo.includes('버스') ? activeBus.routeNo : `${activeBus.routeNo}번`}
             </span>
 
             {/* 실시간 카운트다운 또는 배차 주기 도착 예정 시간 안내 */}
@@ -614,7 +641,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
                 {busArrivals.slice(1, 4).map((otherBus, idx) => {
                   if (!otherBus || !otherBus.routeNo) return null;
                   const otherFmt = formatBusArrivalTime(otherBus.arrTimeSec, otherBus.arrStationCount, isOrigin || otherBus.isOrigin);
-                  const otherRouteNo = otherBus.routeNo === '연계버스' ? '시내 98번' : String(otherBus.routeNo).includes('버스') ? otherBus.routeNo : `${otherBus.routeNo}번`;
+                  const otherRouteNo = String(otherBus.routeNo).includes('버스') ? otherBus.routeNo : `${otherBus.routeNo}번`;
                   return (
                     <span
                       key={otherBus.routeId || `${otherBus.routeNo}-${idx}`}
@@ -728,7 +755,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {displayBuses.map((bus, idx) => {
                 const busFmt = formatBusArrivalTime(bus.arrTimeSec, bus.arrStationCount, isOrigin || bus.isOrigin);
-                const displayRouteNo = bus.routeNo === '연계버스' ? '시내 10번' : bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
+                const displayRouteNo = bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
 
                 return (
                   <div
