@@ -256,6 +256,16 @@ export function findLocalConnectingBus(
     }
   }
 
+  // 2. 주거지별 카카오맵/GBIS 실측 정류소 및 연계 버스 노선 매핑
+  if (cleanName.includes('우림아파트') || cleanName.includes('수택') || (lat >= 37.585 && lat <= 37.595 && lng >= 127.145 && lng <= 127.155)) {
+    return {
+      busNo: '95',
+      busLineDesc: '시내 95번 (장자호수공원역 방면)',
+      boardingName: '청소년문화의집.우림아파트',
+      dropoffName: '장자호수공원역1번출구'
+    };
+  }
+
   return {
     busNo: '',
     busLineDesc: '',

@@ -317,10 +317,10 @@ const STATION_NODE_MAP: Record<string, { nodeId: string; cityCode: string; name:
   '5019348': { nodeId: 'GGB204000159', cityCode: '31020', name: '벤처타운(북문)' },
   '109513': { nodeId: 'GGB205000021', cityCode: '31020', name: '모란역2.3번출구' },
   '113142': { nodeId: 'GGB205000086', cityCode: '31020', name: '모란역.모란시장입구' },
-  '22144':  { nodeId: 'GGB222000144', cityCode: '31120', name: '수평사거리.우림아파트' },
-  '22145':  { nodeId: 'GGB222000145', cityCode: '31120', name: '수평사거리.우림아파트' },
-  '22058':  { nodeId: 'GGB222000058', cityCode: '31120', name: '장자호수공원역.롯데.덕현아파트' },
-  '22072':  { nodeId: 'GGB222000072', cityCode: '31120', name: '장자호수공원역' },
+  '22144':  { nodeId: 'GGB221000098', cityCode: '31120', name: '청소년문화의집.우림아파트' },
+  '22145':  { nodeId: 'GGB221000114', cityCode: '31120', name: '청소년문화의집.우림아파트' },
+  '22058':  { nodeId: 'GGB221000078', cityCode: '31120', name: '장자호수공원역1번출구' },
+  '22072':  { nodeId: 'GGB221000109', cityCode: '31120', name: '장자호수공원역3번출구' },
   '17347':  { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' },
   '17476':  { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' },
   '94369':  { nodeId: 'GGB204000268', cityCode: '31020', name: '신흥역.종합시장' },
@@ -408,11 +408,11 @@ export async function resolveStationNode(
   if (name.includes('푸르지오6') || name.includes('푸르지오7')) {
     return { nodeId: 'GGB216000353', cityCode: '31090', name: '푸르지오7차후문' };
   }
-  if (name.includes('우림아파트') || name.includes('수평사거리')) {
-    return { nodeId: 'GGB222000144', cityCode: '31120', name: '수평사거리.우림아파트' };
+  if (name.includes('우림아파트') || name.includes('수평사거리') || name.includes('청소년문화의집')) {
+    return { nodeId: 'GGB221000098', cityCode: '31120', name: '청소년문화의집.우림아파트' };
   }
   if (name.includes('장자호수공원') || name.includes('장자호수')) {
-    return { nodeId: 'GGB222000058', cityCode: '31120', name: '장자호수공원역.롯데.덕현아파트' };
+    return { nodeId: 'GGB221000078', cityCode: '31120', name: '장자호수공원역1번출구' };
   }
   if (name.includes('구리역')) {
     return { nodeId: 'GGB222000021', cityCode: '31120', name: '구리역.롯데백화점' };
