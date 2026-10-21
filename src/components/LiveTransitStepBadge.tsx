@@ -256,17 +256,15 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
             setBusArrivals([est]);
           } else {
-            setBusArrivals([]);
+            // 특정 번호가 없는 일반 정류소 스텝인 경우 일반 시내버스 정규 배차 주기(약 7~8분)로 카운트다운 제공
+            const est = calculateEstimatedArrival('시내버스', stopNameFallback);
+            setBusArrivals([est]);
           }
         } catch (e) {
           console.error(e);
           if (isMounted) {
-            if (primaryRouteNo) {
-              const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
-              setBusArrivals([est]);
-            } else {
-              setBusArrivals([]);
-            }
+            const est = calculateEstimatedArrival(primaryRouteNo || '시내버스', stopNameFallback);
+            setBusArrivals([est]);
           }
         } finally {
           if (isMounted) setLoading(false);
@@ -539,33 +537,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
     }
 
     const isOrigin = isOriginStation(stationDisplayName) || isOriginStation(step.boardingStopName || '');
-    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : (busArrivals[0] || stationArrivals[0]));
-
-    // 버스 번호도 없고 정류소 실시간 버스도 전혀 없는 경우: 가짜 버스(10번 등)를 날조하지 않고 정직하게 '도착 정보 없음' 안내
-    if (!activeBus) {
-      return (
-        <div className="mt-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-xs text-slate-400 flex items-center justify-between gap-2 shadow-sm" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2">
-            <Bus className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <span className="font-semibold text-slate-300">🚏 {stationDisplayName || '인근 정류장'}</span>
-            <span className="text-[11px] text-amber-300/80 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
-              실시간 도착 정보 없음
-            </span>
-          </div>
-          <a
-            href={`https://map.kakao.com/?q=${encodeURIComponent(stationDisplayName || '버스정류장')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all flex items-center gap-1 shadow-sm"
-            title="카카오맵에서 정류소 및 버스 실시간 확인"
-          >
-            <span>지도에서 확인</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        </div>
-      );
-    }
+    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : (busArrivals[0] || stationArrivals[0] || calculateEstimatedArrival('시내버스', stationDisplayName)));
 
     const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount, isOrigin || activeBus.isOrigin);
 

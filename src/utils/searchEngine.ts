@@ -353,14 +353,14 @@ export function applyEarlyBirdDiscount(cand: RouteCandidate): boolean {
 
 // 각 노선의 주요 정류장 순서 (출근 방향)
 const ROUTE_STOP_ORDER: Record<string, string[]> = {
-  route_commute_jamsil:    ['군자역', '건대역', '잠실역', '석촌역', '송파역', '가락시장역', '문정역', '장지역', '복정역', '모란역'],
-  route_commute_sindorim:  ['신도림역', '대림역', '사당역'],
-  route_commute_gangnam:   ['논현역', '신논현역', '강남역', '양재역'],
-  route_commute_anyang:    ['광명역', '안양역', '범계역', '인덕원역'],
-  route_commute_osan:      ['오산 교촌 본사', '사계절 꽃농원', '오산시청', '오산대역 후문', 'UN군초전기념관'],
-  route_commute_dongtan:   ['금호어울림', '한신더휴', '신안2차,반도4차', '이주택지', '대방디엠시티', '한미약품', '예당고사거리'],
-  route_shuttle_pangyo:    ['판교역', '삼평교'],
-  route_shuttle_yatap:     ['야탑역', '판교2밸리'],
+  route_commute_jamsil: ['군자역', '건대역', '잠실역', '석촌역', '송파역', '가락시장역', '문정역', '장지역', '복정역', '모란역'],
+  route_commute_sindorim: ['신도림역', '대림역', '사당역'],
+  route_commute_gangnam: ['논현역', '신논현역', '강남역', '양재역'],
+  route_commute_anyang: ['광명역', '안양역', '범계역', '인덕원역'],
+  route_commute_osan: ['오산 교촌 본사', '사계절 꽃농원', '오산시청', '오산대역 후문', 'UN군초전기념관'],
+  route_commute_dongtan: ['금호어울림', '한신더휴', '신안2차,반도4차', '이주택지', '대방디엠시티', '한미약품', '예당고사거리'],
+  route_shuttle_pangyo: ['판교역', '삼평교'],
+  route_shuttle_yatap: ['야탑역', '판교2밸리'],
 };
 
 // 특정 정류장 이후의 경유 정류장 목록
@@ -479,7 +479,7 @@ export function getOriginAccess(originLat: number, originLng: number, originName
       minutes: busMins,
       distMeters: distToHubMeters,
       type: 'public_bus' as const,
-      title: `[집 앞 정류장] ${boardingName} 출발 ➔ ${hub.name} 버스 이동${busNo && busLineDesc ? ` (${busLineDesc})` : ''}`,
+      title: `${boardingName} 출발 ➔ ${hub.name} 버스 이동${busNo && busLineDesc ? ` (${busLineDesc})` : ''}`,
       subtitle: `${boardingName} ➔ ${hub.name} 방면 (${busNo && busLineDesc ? `${busLineDesc}, ` : ''}약 ${busMins}분, ${hubDistText})`,
       distText: hubDistText,
       fare: GYEONGGI_BUS_FARES.CITY_NORMAL,
@@ -1013,11 +1013,11 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
             const walkToHqMins = 3; // 판교2밸리 정류장 ➔ 인피니티타워 E동 도보 3분
             const totalDuration = walkToSubwayMins + jamsilTransit.minutes + 6 + busRideMins + walkToHqMins;
 
-          const destArrivalMins = targetMins - 5;
-          const deptAtJamsilBusMins = destArrivalMins - walkToHqMins - busRideMins;
-          const arrAtJamsilSubwayMins = deptAtJamsilBusMins - 6;
-          const deptSubwayMins = arrAtJamsilSubwayMins - jamsilTransit.minutes;
-          const homeDeptMins = deptSubwayMins - walkToSubwayMins;
+            const destArrivalMins = targetMins - 5;
+            const deptAtJamsilBusMins = destArrivalMins - walkToHqMins - busRideMins;
+            const arrAtJamsilSubwayMins = deptAtJamsilBusMins - 6;
+            const deptSubwayMins = arrAtJamsilSubwayMins - jamsilTransit.minutes;
+            const homeDeptMins = deptSubwayMins - walkToSubwayMins;
 
             const jamsilCoord = STATION_COORDS['잠실역'] || { lat: 37.5133, lng: 127.1001 };
             const pangyo2ValleyCoord = { lat: 37.4087, lng: 127.0945 }; // 판교2밸리 기업지원허브 정류장
@@ -1115,9 +1115,9 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
                 score: 0
               });
             }
+          }
         }
       }
-    }
 
       // 4. [카카오맵 실측 대중교통] 판교역 환승 ➔ 성남 시내버스 310번 / 602-1B번 ➔ 사옥 정문 바로 앞 하차 (배차 7~10분)
       if (nearestSubwayHub) {
@@ -1125,8 +1125,8 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
         const pangyoTransit = calculateSubwayRoute(nearestSubwayHub.name, '판교역');
         const subwayTransitMins = pangyoTransit.minutes;
         const isNearbyPangyo = subwayTransitMins > 0 && subwayTransitMins <= 30 && (
-          nearestSubwayHub.lines.includes('신분당선') || 
-          nearestSubwayHub.lines.includes('경강선') || 
+          nearestSubwayHub.lines.includes('신분당선') ||
+          nearestSubwayHub.lines.includes('경강선') ||
           ['판교역', '이매역', '서현역', '수내역', '정자역', '미금역', '야탑역'].includes(nearestSubwayHub.name)
         );
 
@@ -1135,19 +1135,19 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
           const transitFare = isSinbundang ? 3200 : GYEONGGI_BUS_FARES.CITY_NORMAL; // 신분당선 미이용 시 경기도 시내버스 기본 1,650원
           const subwayFare = isSinbundang ? 3200 : 1500;
 
-        const distToHubMeters = getHaversineDistanceMeters(originLat, originLng, nearestSubwayHub.lat, nearestSubwayHub.lng);
-        const walkToSubwayMins = Math.max(2, Math.round(distToHubMeters / 67));
-        const hubDistText = distToHubMeters >= 1000 ? `${(distToHubMeters / 1000).toFixed(1)}km` : `${Math.round(distToHubMeters)}m`;
+          const distToHubMeters = getHaversineDistanceMeters(originLat, originLng, nearestSubwayHub.lat, nearestSubwayHub.lng);
+          const walkToSubwayMins = Math.max(2, Math.round(distToHubMeters / 67));
+          const hubDistText = distToHubMeters >= 1000 ? `${(distToHubMeters / 1000).toFixed(1)}km` : `${Math.round(distToHubMeters)}m`;
 
-        const busRideMins = 8; // 판교역 ➔ 인피니티타워 E동 시내버스 약 8분
-        const walkToHqMins = 1; // 정문 바로 앞 하차 도보 1분
-        const totalDuration = walkToSubwayMins + subwayTransitMins + 5 + busRideMins + walkToHqMins;
+          const busRideMins = 8; // 판교역 ➔ 인피니티타워 E동 시내버스 약 8분
+          const walkToHqMins = 1; // 정문 바로 앞 하차 도보 1분
+          const totalDuration = walkToSubwayMins + subwayTransitMins + 5 + busRideMins + walkToHqMins;
 
-        const destArrivalMins = targetMins - 3;
-        const deptAtPangyoBusMins = destArrivalMins - walkToHqMins - busRideMins;
-        const arrAtPangyoSubwayMins = deptAtPangyoBusMins - 5;
-        const deptSubwayMins = arrAtPangyoSubwayMins - subwayTransitMins;
-        const homeDeptMins = deptSubwayMins - walkToSubwayMins;
+          const destArrivalMins = targetMins - 3;
+          const deptAtPangyoBusMins = destArrivalMins - walkToHqMins - busRideMins;
+          const arrAtPangyoSubwayMins = deptAtPangyoBusMins - 5;
+          const deptSubwayMins = arrAtPangyoSubwayMins - subwayTransitMins;
+          const homeDeptMins = deptSubwayMins - walkToSubwayMins;
 
           const subwaySubSteps = buildSubwayRouteSteps(
             nearestSubwayHub.name,
@@ -1239,15 +1239,15 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
               busMinutes: subwayTransitMins + busRideMins,
               fare: transitFare, // 경기도 시내버스 기준 ₩1,650 (신분당선 환승 시 ₩3,200)
               transferCount: 2,
-            steps: cityBusSteps,
-            routeColor: '#3b82f6',
-            routeName: '지하철+시내310번',
-            routeCategory: 'public_transit',
-            score: 0
-          });
+              steps: cityBusSteps,
+              routeColor: '#3b82f6',
+              routeName: '지하철+시내310번',
+              routeCategory: 'public_transit',
+              score: 0
+            });
+          }
         }
       }
-    }
 
       // 5. [성남 시내 87번 / 332번] 모란역(8호선 / 수인분당선) ➔ 사옥 정문 출근 (약 23~25분 소요, 모란역 직접 인근 거주자 전용)
       if (nearestSubwayHub) {
@@ -1988,8 +1988,8 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
         const pangyoTransit = calculateSubwayRoute('판교역', nearestSubwayHub.name);
         const subwayTransitMins = pangyoTransit.minutes;
         const isNearbyPangyo = subwayTransitMins > 0 && subwayTransitMins <= 30 && (
-          nearestSubwayHub.lines.includes('신분당선') || 
-          nearestSubwayHub.lines.includes('경강선') || 
+          nearestSubwayHub.lines.includes('신분당선') ||
+          nearestSubwayHub.lines.includes('경강선') ||
           ['판교역', '이매역', '서현역', '수내역', '정자역', '미금역', '야탑역'].includes(nearestSubwayHub.name)
         );
 
@@ -1998,90 +1998,90 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
           const transitFare = isSinbundang ? 3200 : GYEONGGI_BUS_FARES.CITY_NORMAL; // 신분당선 미이용 시 경기도 시내버스 1,650원
 
           const deptBusMins = targetMins + walkToHqBusStop + 3; // 3분 대기
-        const arrPangyoBusMins = deptBusMins + busRideMins;
-        const deptSubwayMins = arrPangyoBusMins + 5;
+          const arrPangyoBusMins = deptBusMins + busRideMins;
+          const deptSubwayMins = arrPangyoBusMins + 5;
 
-        const subwaySubSteps = buildSubwayRouteSteps(
-          '판교역',
-          nearestSubwayHub.name,
-          pangyoTransit,
-          deptSubwayMins,
-          'public-out-city',
-          isSinbundang ? 1550 : 0, // 시내버스 1,650원 결제 후 환승 차액
-          isSinbundang ? '신분당선' : (nearestSubwayHub.lines[0] || '지하철')
-        );
+          const subwaySubSteps = buildSubwayRouteSteps(
+            '판교역',
+            nearestSubwayHub.name,
+            pangyoTransit,
+            deptSubwayMins,
+            'public-out-city',
+            isSinbundang ? 1550 : 0, // 시내버스 1,650원 결제 후 환승 차액
+            isSinbundang ? '신분당선' : (nearestSubwayHub.lines[0] || '지하철')
+          );
 
-        const actualSubDeptMins = subwaySubSteps.startDeptMins;
-        const actualSubArrMins = subwaySubSteps.endArrMins;
-        const finalArrivalMins = actualSubArrMins + 5;
-        const destArrivalStr = minutesToTimeString(finalArrivalMins);
+          const actualSubDeptMins = subwaySubSteps.startDeptMins;
+          const actualSubArrMins = subwaySubSteps.endArrMins;
+          const finalArrivalMins = actualSubArrMins + 5;
+          const destArrivalStr = minutesToTimeString(finalArrivalMins);
 
-        const cityBusSteps: RouteStepItem[] = [
-          {
-            id: 'public-out-city-1',
-            type: 'walk',
-            title: '사옥 정문 버스정류장 도보',
-            subtitle: '인피니티타워 E동 정문 앞 버스정류장 (도보 2분)',
+          const cityBusSteps: RouteStepItem[] = [
+            {
+              id: 'public-out-city-1',
+              type: 'walk',
+              title: '사옥 정문 버스정류장 도보',
+              subtitle: '인피니티타워 E동 정문 앞 버스정류장 (도보 2분)',
+              departureTime: targetTime,
+              arrivalTime: minutesToTimeString(deptBusMins),
+              durationMinutes: walkToHqBusStop,
+              coords: { lat: hqCoord.lat, lng: hqCoord.lng }
+            },
+            {
+              id: 'public-out-city-2',
+              type: 'public_bus',
+              title: '성남 시내버스 310번 / 마을 602-1B번 탑승',
+              subtitle: '사옥 정문 ➔ 판교역 북문광장 정류장 직통 (8분)',
+              departureTime: minutesToTimeString(deptBusMins),
+              arrivalTime: minutesToTimeString(arrPangyoBusMins),
+              durationMinutes: busRideMins,
+              fare: GYEONGGI_BUS_FARES.CITY_NORMAL,
+              coords: { lat: pangyoCoord.lat, lng: pangyoCoord.lng }
+            },
+            {
+              id: 'public-out-city-3',
+              type: 'walk',
+              title: '판교역 환승 이동',
+              subtitle: '신분당선 / 경강선 판교역 승강장 이동 (5분)',
+              departureTime: minutesToTimeString(arrPangyoBusMins),
+              arrivalTime: minutesToTimeString(actualSubDeptMins),
+              durationMinutes: 5,
+              coords: { lat: pangyoCoord.lat, lng: pangyoCoord.lng }
+            },
+            ...subwaySubSteps.steps,
+            {
+              id: 'public-out-city-5',
+              type: 'walk',
+              title: `${originName} 최종 도착`,
+              subtitle: '목적지 도보 5분',
+              departureTime: minutesToTimeString(actualSubArrMins),
+              arrivalTime: destArrivalStr,
+              durationMinutes: 5,
+              coords: { lat: originLat, lng: originLng }
+            }
+          ];
+
+          candidates.push({
+            id: 'public-transit-citybus-310-out',
+            badges: ['min_walk'],
+            title: '대중교통: 사옥 정문 310번 ➔ 판교역 ➔ 지하철 귀가',
+            subtitle: `사옥 정문 310번 ➔ 판교역 ➔ ${nearestSubwayHub.name} (${destArrivalStr} 도착, ₩${transitFare.toLocaleString()})`,
             departureTime: targetTime,
-            arrivalTime: minutesToTimeString(deptBusMins),
-            durationMinutes: walkToHqBusStop,
-            coords: { lat: hqCoord.lat, lng: hqCoord.lng }
-          },
-          {
-            id: 'public-out-city-2',
-            type: 'public_bus',
-            title: '성남 시내버스 310번 / 마을 602-1B번 탑승',
-            subtitle: '사옥 정문 ➔ 판교역 북문광장 정류장 직통 (8분)',
-            departureTime: minutesToTimeString(deptBusMins),
-            arrivalTime: minutesToTimeString(arrPangyoBusMins),
-            durationMinutes: busRideMins,
-            fare: GYEONGGI_BUS_FARES.CITY_NORMAL,
-            coords: { lat: pangyoCoord.lat, lng: pangyoCoord.lng }
-          },
-          {
-            id: 'public-out-city-3',
-            type: 'walk',
-            title: '판교역 환승 이동',
-            subtitle: '신분당선 / 경강선 판교역 승강장 이동 (5분)',
-            departureTime: minutesToTimeString(arrPangyoBusMins),
-            arrivalTime: minutesToTimeString(actualSubDeptMins),
-            durationMinutes: 5,
-            coords: { lat: pangyoCoord.lat, lng: pangyoCoord.lng }
-          },
-          ...subwaySubSteps.steps,
-          {
-            id: 'public-out-city-5',
-            type: 'walk',
-            title: `${originName} 최종 도착`,
-            subtitle: '목적지 도보 5분',
-            departureTime: minutesToTimeString(actualSubArrMins),
             arrivalTime: destArrivalStr,
-            durationMinutes: 5,
-            coords: { lat: originLat, lng: originLng }
-          }
-        ];
-
-        candidates.push({
-          id: 'public-transit-citybus-310-out',
-          badges: ['min_walk'],
-          title: '대중교통: 사옥 정문 310번 ➔ 판교역 ➔ 지하철 귀가',
-          subtitle: `사옥 정문 310번 ➔ 판교역 ➔ ${nearestSubwayHub.name} (${destArrivalStr} 도착, ₩${transitFare.toLocaleString()})`,
-          departureTime: targetTime,
-          arrivalTime: destArrivalStr,
-          totalDurationMinutes: finalArrivalMins - targetMins,
-          walkMinutes: walkToHqBusStop + 5 + 5,
-          waitMinutes: 3,
-          busMinutes: busRideMins + subwayTransitMins,
-          fare: transitFare,
-          transferCount: 1,
-          steps: cityBusSteps,
-          routeColor: '#3b82f6',
-          routeName: '시내310번+지하철',
-          routeCategory: 'public_transit',
-          score: 0
-        });
+            totalDurationMinutes: finalArrivalMins - targetMins,
+            walkMinutes: walkToHqBusStop + 5 + 5,
+            waitMinutes: 3,
+            busMinutes: busRideMins + subwayTransitMins,
+            fare: transitFare,
+            transferCount: 1,
+            steps: cityBusSteps,
+            routeColor: '#3b82f6',
+            routeName: '시내310번+지하철',
+            routeCategory: 'public_transit',
+            score: 0
+          });
+        }
       }
-    }
 
       // 2) 잠실/송파/강동 방면: 판교2밸리 광역버스 1007번 / 6900번 ➔ 잠실역 ➔ 8호선/2호선 환승
       const isJamsilOutCorridor = nearestSubwayHub.lines.includes('8호선') ||
@@ -2094,90 +2094,90 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
           const walkToPangyo2Valley = 4;
           const bus1007RideMins = 25; // 판교2밸리 ➔ 잠실역 고속화도로 직행 약 25분
 
-        const deptBusMins = targetMins + walkToPangyo2Valley + 4; // 4분 배차 대기
-        const arrJamsilBusMins = deptBusMins + bus1007RideMins;
-        const deptSubwayMins = arrJamsilBusMins + 5;
+          const deptBusMins = targetMins + walkToPangyo2Valley + 4; // 4분 배차 대기
+          const arrJamsilBusMins = deptBusMins + bus1007RideMins;
+          const deptSubwayMins = arrJamsilBusMins + 5;
 
-        const subwaySubSteps = buildSubwayRouteSteps(
-          '잠실역',
-          nearestSubwayHub.name,
-          jamsilTransit,
-          deptSubwayMins,
-          'public-out-1007',
-          0,
-          nearestSubwayHub.lines[0] || '8호선'
-        );
+          const subwaySubSteps = buildSubwayRouteSteps(
+            '잠실역',
+            nearestSubwayHub.name,
+            jamsilTransit,
+            deptSubwayMins,
+            'public-out-1007',
+            0,
+            nearestSubwayHub.lines[0] || '8호선'
+          );
 
-        const actualSubDeptMins = subwaySubSteps.startDeptMins;
-        const actualSubArrMins = subwaySubSteps.endArrMins;
-        const finalArrivalMins = actualSubArrMins + 5;
-        const destArrivalStr = minutesToTimeString(finalArrivalMins);
+          const actualSubDeptMins = subwaySubSteps.startDeptMins;
+          const actualSubArrMins = subwaySubSteps.endArrMins;
+          const finalArrivalMins = actualSubArrMins + 5;
+          const destArrivalStr = minutesToTimeString(finalArrivalMins);
 
-        const bus1007Steps: RouteStepItem[] = [
-          {
-            id: 'public-out-1007-1',
-            type: 'walk',
-            title: '판교 제2테크노밸리 버스정류장 도보',
-            subtitle: '사옥 앞 ➔ LH판교창조경제밸리 정류장 (도보 3분)',
+          const bus1007Steps: RouteStepItem[] = [
+            {
+              id: 'public-out-1007-1',
+              type: 'walk',
+              title: '판교 제2테크노밸리 버스정류장 도보',
+              subtitle: '사옥 앞 ➔ LH판교창조경제밸리 정류장 (도보 3분)',
+              departureTime: targetTime,
+              arrivalTime: minutesToTimeString(deptBusMins),
+              durationMinutes: walkToPangyo2Valley,
+              coords: { lat: hqCoord.lat, lng: hqCoord.lng }
+            },
+            {
+              id: 'public-out-1007-2',
+              type: 'public_bus',
+              title: '광역버스 1007번 / 6900번 탑승 (잠실역 방면 직행)',
+              subtitle: '판교 제2밸리 ➔ 분당수서고속화 ➔ 잠실역 1번출구 직행 (25분 소요)',
+              departureTime: minutesToTimeString(deptBusMins),
+              arrivalTime: minutesToTimeString(arrJamsilBusMins),
+              durationMinutes: bus1007RideMins,
+              fare: 3200,
+              note: '🚍 경기도 직행좌석형 광역버스 (교통카드 ₩3,200)'
+            },
+            {
+              id: 'public-out-1007-3',
+              type: 'walk',
+              title: '잠실역 하차 ➔ 지하철 2호선 / 8호선 환승',
+              subtitle: '잠실역 승강장 이동 (5분)',
+              departureTime: minutesToTimeString(arrJamsilBusMins),
+              arrivalTime: minutesToTimeString(actualSubDeptMins),
+              durationMinutes: 5
+            },
+            ...subwaySubSteps.steps,
+            {
+              id: 'public-out-1007-5',
+              type: 'walk',
+              title: `${originName} 최종 도착`,
+              subtitle: '목적지 도보 5분',
+              departureTime: minutesToTimeString(actualSubArrMins),
+              arrivalTime: destArrivalStr,
+              durationMinutes: 5,
+              coords: { lat: originLat, lng: originLng }
+            }
+          ];
+
+          candidates.push({
+            id: 'public-transit-bus-1007-out',
+            badges: ['fastest'],
+            title: '대중교통: 광역 1007번(잠실 직통) ➔ 8호선/2호선 환승',
+            subtitle: `판교2밸리 1007번 ➔ 잠실역 직행 ➔ ${nearestSubwayHub.name} (${destArrivalStr} 도착)`,
             departureTime: targetTime,
-            arrivalTime: minutesToTimeString(deptBusMins),
-            durationMinutes: walkToPangyo2Valley,
-            coords: { lat: hqCoord.lat, lng: hqCoord.lng }
-          },
-          {
-            id: 'public-out-1007-2',
-            type: 'public_bus',
-            title: '광역버스 1007번 / 6900번 탑승 (잠실역 방면 직행)',
-            subtitle: '판교 제2밸리 ➔ 분당수서고속화 ➔ 잠실역 1번출구 직행 (25분 소요)',
-            departureTime: minutesToTimeString(deptBusMins),
-            arrivalTime: minutesToTimeString(arrJamsilBusMins),
-            durationMinutes: bus1007RideMins,
-            fare: 3200,
-            note: '🚍 경기도 직행좌석형 광역버스 (교통카드 ₩3,200)'
-          },
-          {
-            id: 'public-out-1007-3',
-            type: 'walk',
-            title: '잠실역 하차 ➔ 지하철 2호선 / 8호선 환승',
-            subtitle: '잠실역 승강장 이동 (5분)',
-            departureTime: minutesToTimeString(arrJamsilBusMins),
-            arrivalTime: minutesToTimeString(actualSubDeptMins),
-            durationMinutes: 5
-          },
-          ...subwaySubSteps.steps,
-          {
-            id: 'public-out-1007-5',
-            type: 'walk',
-            title: `${originName} 최종 도착`,
-            subtitle: '목적지 도보 5분',
-            departureTime: minutesToTimeString(actualSubArrMins),
             arrivalTime: destArrivalStr,
-            durationMinutes: 5,
-            coords: { lat: originLat, lng: originLng }
-          }
-        ];
-
-        candidates.push({
-          id: 'public-transit-bus-1007-out',
-          badges: ['fastest'],
-          title: '대중교통: 광역 1007번(잠실 직통) ➔ 8호선/2호선 환승',
-          subtitle: `판교2밸리 1007번 ➔ 잠실역 직행 ➔ ${nearestSubwayHub.name} (${destArrivalStr} 도착)`,
-          departureTime: targetTime,
-          arrivalTime: destArrivalStr,
-          totalDurationMinutes: finalArrivalMins - targetMins,
-          walkMinutes: walkToPangyo2Valley + 5 + 5,
-          waitMinutes: 4,
-          busMinutes: bus1007RideMins + jamsilTransitMins,
-          fare: 3200,
-          transferCount: 1,
-          steps: bus1007Steps,
-          routeColor: '#ef4444',
-          routeName: '광역1007번+전철',
-          routeCategory: 'public_transit',
-          score: 0
-        });
+            totalDurationMinutes: finalArrivalMins - targetMins,
+            walkMinutes: walkToPangyo2Valley + 5 + 5,
+            waitMinutes: 4,
+            busMinutes: bus1007RideMins + jamsilTransitMins,
+            fare: 3200,
+            transferCount: 1,
+            steps: bus1007Steps,
+            routeColor: '#ef4444',
+            routeName: '광역1007번+전철',
+            routeCategory: 'public_transit',
+            score: 0
+          });
+        }
       }
-    }
 
       // 3) [성남 시내 332번] 사옥 정문 ➔ 성남역(GTX-A/경강선) / 서현역 / 이매역 직통 퇴근
       if (nearestSubwayHub.name.includes('성남역') || nearestSubwayHub.name.includes('서현') || nearestSubwayHub.name.includes('이매')) {
