@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { RouteStepItem } from '../types/bus';
 import { fetchRealtimeSubwayArrival, cleanSubwayStationName, RealtimeArrival, SUBWAY_LINE_MAP, getSubwayScheduleInfo, deduplicateSubwayArrivals, generateDailySubwayTimetable } from '../utils/subwayApi';
 import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival, isOriginStation } from '../utils/busLiveApi';
-import { findLocalConnectingBus } from '../utils/connectingBusData';
 import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface LiveTransitStepBadgeProps {
@@ -167,27 +166,19 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
       } else if (step.type === 'public_bus') {
         const fullText = (step.title + ' ' + (step.subtitle || '') + ' ' + (step.note || '')).trim();
 
-        // 1. 버스 번호 정밀 파싱 (step.title 우선 추출, M/G/P 광역버스 및 일반/마을버스 모두 지원)
-        // 1. 탑승 대상 버스 노선 번호 추출 (step.busNo 및 step.title/note/subtitle 전체에서 복수 노선 완벽 추출)
+        // 탑승 대상 버스 노선 번호 추출
+        // ✅ step.busNo가 있으면 해당 노선만 사용 (다른 버스 번호를 텍스트에서 추가 파싱하지 않음)
+        // ✅ step.busNo가 없을 때만 제목/설명 텍스트에서 버스 번호를 보조 추출함
         let routeNoList: string[] = [];
         if (step.busNo) {
           step.busNo.split(/[\/,]/).forEach(n => {
             const clean = n.trim().replace(/[^0-9A-Za-z-]/g, '');
             if (clean && !clean.includes('출구')) routeNoList.push(clean);
           });
-        }
-
-        // title, note, subtitle 등 전체 텍스트에서 복수 노선(87/332/311번 등) 추출
-        const extractedFromText = extractBusNumbers(`${step.title} ${step.note || ''} ${step.subtitle || ''}`);
-        routeNoList = Array.from(new Set([...routeNoList, ...extractedFromText]));
-
-        // 만약 노선 번호가 여전히 비어있다면 지역 연계 버스 엔진으로 자동 보충
-        if (routeNoList.length === 0) {
-          const localFallback = findLocalConnectingBus(step.boardingStopName || step.title, step.dropoffStopName || '', step.coords);
-          localFallback.busNo.split(/[\/,]/).forEach(n => {
-            const clean = n.trim().replace(/[^0-9A-Za-z-]/g, '');
-            if (clean) routeNoList.push(clean);
-          });
+        } else {
+          // busNo가 없을 때만 텍스트에서 복수 노선 파싱
+          const extractedFromText = extractBusNumbers(`${step.title} ${step.note || ''} ${step.subtitle || ''}`);
+          routeNoList = Array.from(new Set(extractedFromText));
         }
 
         const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
