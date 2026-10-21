@@ -322,7 +322,11 @@ const STATION_NODE_MAP: Record<string, { nodeId: string; cityCode: string; name:
   '22058':  { nodeId: 'GGB222000058', cityCode: '31120', name: '장자호수공원역.롯데.덕현아파트' },
   '22072':  { nodeId: 'GGB222000072', cityCode: '31120', name: '장자호수공원역' },
   '17347':  { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' },
-  '17476':  { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' }
+  '17476':  { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' },
+  '94369':  { nodeId: 'GGB204000268', cityCode: '31020', name: '신흥역.종합시장' },
+  '94370':  { nodeId: 'GGB205000001', cityCode: '31020', name: '신흥역.종합시장' },
+  '94368':  { nodeId: 'GGB204000008', cityCode: '31020', name: '신흥역.종합시장(광역)' },
+  '94371':  { nodeId: 'GGB205000002', cityCode: '31020', name: '수진역.성호시장.성일중고입구' }
 };
 
 export function deduceCityCode(coords?: { lat: number; lng: number }, name?: string): string {
@@ -422,6 +426,12 @@ export async function resolveStationNode(
   if (name.includes('상록수역')) {
     return { nodeId: 'GGB216000057', cityCode: '31090', name: '상록수역' };
   }
+  if (name.includes('신흥역') || name.includes('종합시장')) {
+    return { nodeId: 'GGB204000268', cityCode: '31020', name: '신흥역.종합시장' };
+  }
+  if (name.includes('수진역')) {
+    return { nodeId: 'GGB205000002', cityCode: '31020', name: '수진역.성호시장.성일중고입구' };
+  }
 
   // 4. 좌표 기반 초근접(350m 이내) 거점 정류소 감지
   if (coords?.lat && coords?.lng) {
@@ -508,7 +518,88 @@ export function calculateEstimatedArrival(
 }
 
 /**
- * 국토교통부 대중교통 API를 호출하여 특정 정류소의 실시간 버스 도착정보를 동적으로 조회합니다.
+ * ODsay 실시간 정류소 도착 정보 API를 호출합니다.
+ * 수도권(서울/경기/인천) 정류소의 실시간 버스 도착정보를 안정적으로 제공합니다.
+ */
+export async function fetchOdsayRealtimeArrivals(
+  odsayStationId: string,
+  stopName: string
+): Promise<BusArrivalItem[]> {
+  const odsayApiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ODSAY_API_KEY)
+    ? import.meta.env.VITE_ODSAY_API_KEY
+    : (process.env.VITE_ODSAY_API_KEY || 's5yBNr5+2Nns1nGrvy/TdA');
+  if (!odsayApiKey || !odsayStationId) return [];
+
+  try {
+    const baseUrl = (typeof window !== 'undefined') ? '/api/odsay' : 'https://api.odsay.com';
+    const url = `${baseUrl}/v1/api/realtimeStation?apiKey=${encodeURIComponent(odsayApiKey)}&stationID=${encodeURIComponent(odsayStationId)}`;
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      headers: (typeof window === 'undefined') ? { 'Referer': 'http://localhost:5173/', 'Origin': 'http://localhost:5173' } : undefined
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const realList = data?.result?.real;
+    if (!Array.isArray(realList) || realList.length === 0) return [];
+
+    const now = new Date();
+    const nowStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const items: BusArrivalItem[] = [];
+
+    for (const r of realList) {
+      const rNo = String(r.routeNm || '').trim();
+      if (!rNo) continue;
+      const cfg = getBusRouteConfig(rNo);
+
+      if (r.arrival1 && typeof r.arrival1.arrivalSec === 'number') {
+        const arrSec = r.arrival1.arrivalSec;
+        items.push({
+          routeId: String(r.localRouteId || r.routeId || `${rNo}-1`),
+          routeNo: rNo,
+          routeType: cfg.type,
+          routeColor: cfg.color,
+          arrTimeSec: arrSec,
+          arrTimeMin: Math.max(1, Math.round(arrSec / 60)),
+          arrStationCount: Number(r.arrival1.leftStation || 1),
+          currentStationName: r.arrival1.leftStation ? `${r.arrival1.leftStation}번째 전` : '운행 중',
+          stationName: stopName,
+          stationId: odsayStationId,
+          lowPlate: r.arrival1.lowBusYn === 'Y',
+          crowded: (r.arrival1.congestion === 1 ? '여유' : r.arrival1.congestion === 2 ? '보통' : '혼잡') as any,
+          updatedAt: nowStr,
+          isRealtime: true
+        });
+      }
+
+      if (r.arrival2 && typeof r.arrival2.arrivalSec === 'number') {
+        const arrSec = r.arrival2.arrivalSec;
+        items.push({
+          routeId: String(r.localRouteId || r.routeId || `${rNo}-2`),
+          routeNo: rNo,
+          routeType: cfg.type,
+          routeColor: cfg.color,
+          arrTimeSec: arrSec,
+          arrTimeMin: Math.max(1, Math.round(arrSec / 60)),
+          arrStationCount: Number(r.arrival2.leftStation || 1),
+          currentStationName: r.arrival2.leftStation ? `${r.arrival2.leftStation}번째 전` : '운행 중',
+          stationName: stopName,
+          stationId: odsayStationId,
+          lowPlate: r.arrival2.lowBusYn === 'Y',
+          crowded: '보통',
+          updatedAt: nowStr,
+          isRealtime: true
+        });
+      }
+    }
+    return items;
+  } catch (err) {
+    console.warn('[ODsayRealtime] 호출 오류:', err);
+    return [];
+  }
+}
+
+/**
+ * 국토교통부 대중교통 API 및 ODsay 실시간 도착 API를 호출하여 특정 정류소의 실시간 버스 도착정보를 동적으로 조회합니다.
  * 실시간 API 데이터가 있을 경우 1순위 실시간 도착(초/정류장 전)을 제공하며,
  * 배차 간격 중간이거나 지연 시 노선 공식 배차 주기 기반의 현실적인 도착 예정 시간을 중단 없이 제공합니다.
  */
@@ -527,7 +618,19 @@ export async function fetchLiveBusArrivals(
   const now = new Date();
   const nowStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  // 1. 공공데이터포털 국토교통부 버스도착정보 API 호출 시도 (nodeId가 있는 경우)
+  const realtimeBuses: BusArrivalItem[] = [];
+
+  // 1. ODsay 실시간 정류소 도착 정보 조회 (odsayStationId가 있는 경우)
+  if (odsayStationId) {
+    try {
+      const odsayItems = await fetchOdsayRealtimeArrivals(odsayStationId, stopName);
+      if (odsayItems.length > 0) {
+        realtimeBuses.push(...odsayItems);
+      }
+    } catch (_) {}
+  }
+
+  // 2. 공공데이터포털 국토교통부 버스도착정보 API 호출 (nodeId가 있는 경우)
   if (apiKey && resolved?.nodeId && resolved.nodeId.startsWith('GGB')) {
     try {
       const baseUrl = (typeof window !== 'undefined') ? '/api/public-bus' : 'http://apis.data.go.kr';
@@ -576,38 +679,50 @@ export async function fetchLiveBusArrivals(
               isRealtime: true
             };
           });
-          list.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
 
-          // 만약 특정 노선 필터링이 요청된 경우 (예: 87, 332, 311번 등)
-          if (operatingRouteNos && operatingRouteNos.length > 0) {
-            const combinedList: BusArrivalItem[] = [];
-
-            for (const rNo of operatingRouteNos) {
-              const cleanTarget = rNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
-              const matchedRealtime = list.filter(item => {
-                const cleanItem = item.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
-                return cleanItem === cleanTarget;
-              });
-
-              if (matchedRealtime.length > 0) {
-                // 해당 노선의 실시간 도착 정보 추가
-                combinedList.push(...matchedRealtime);
-              } else {
-                // 실시간 API에 현재 노선이 아직 안 잡힌 경우: 노선 배차 주기 기반 도착 예정 시간 자동 생성
-                combinedList.push(calculateEstimatedArrival(rNo, stopName, resolved?.nodeId));
-              }
-            }
-
-            combinedList.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
-            return combinedList;
-          }
-
-          return list;
+          realtimeBuses.push(...list);
         }
       }
     } catch (apiError) {
       console.warn(`[PublicBusAPI] 국토교통부 API 호출 지연 또는 서비스 미등록 (${stopName}):`, apiError);
     }
+  }
+
+  // 중복 노선 병합 (동일 노선 번호는 더 도착 시간이 빠른 실시간 정보 우선)
+  const unifiedMap = new Map<string, BusArrivalItem>();
+  for (const item of realtimeBuses) {
+    const key = item.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+    if (!unifiedMap.has(key) || unifiedMap.get(key)!.arrTimeSec > item.arrTimeSec) {
+      unifiedMap.set(key, item);
+    }
+  }
+  const unifiedList = Array.from(unifiedMap.values()).sort((a, b) => a.arrTimeSec - b.arrTimeSec);
+
+  // 3. 만약 특정 노선 필터링이 요청된 경우 (예: 332번, 87번 등)
+  if (operatingRouteNos && operatingRouteNos.length > 0) {
+    const combinedList: BusArrivalItem[] = [];
+
+    for (const rNo of operatingRouteNos) {
+      const cleanTarget = rNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+      const matchedRealtime = unifiedList.filter(item => {
+        const cleanItem = item.routeNo.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+        return cleanItem === cleanTarget;
+      });
+
+      if (matchedRealtime.length > 0) {
+        combinedList.push(...matchedRealtime);
+      } else {
+        // 실시간 API에 현재 노선이 아직 안 잡힌 경우: 노선 배차 주기 기반 도착 예정 시간 자동 생성
+        combinedList.push(calculateEstimatedArrival(rNo, stopName, resolved?.nodeId));
+      }
+    }
+
+    combinedList.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
+    return combinedList;
+  }
+
+  if (unifiedList.length > 0) {
+    return unifiedList;
   }
 
   // 2. 실시간 API에 버스가 없거나 정류소 미등록 시:
