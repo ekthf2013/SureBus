@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RouteStepItem } from '../types/bus';
 import { fetchRealtimeSubwayArrival, cleanSubwayStationName, RealtimeArrival, SUBWAY_LINE_MAP, getSubwayScheduleInfo, deduplicateSubwayArrivals, generateDailySubwayTimetable } from '../utils/subwayApi';
 import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival, isOriginStation } from '../utils/busLiveApi';
+import { findLocalConnectingBus } from '../utils/connectingBusData';
 import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface LiveTransitStepBadgeProps {
@@ -180,7 +181,16 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
         const extractedFromText = extractBusNumbers(`${step.title} ${step.note || ''} ${step.subtitle || ''}`);
         routeNoList = Array.from(new Set([...routeNoList, ...extractedFromText]));
 
-        const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
+        // 만약 노선 번호가 여전히 비어있다면 지역 연계 버스 엔진으로 자동 보충
+        if (routeNoList.length === 0) {
+          const localFallback = findLocalConnectingBus(step.boardingStopName || step.title, step.dropoffStopName || '', step.coords);
+          localFallback.busNo.split(/[\/,]/).forEach(n => {
+            const clean = n.trim().replace(/[^0-9A-Za-z-]/g, '');
+            if (clean) routeNoList.push(clean);
+          });
+        }
+
+        const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '10';
 
         // 2. 승차 정류장 판별 및 고유 정류소 ID 추출
         const stationIdMatch = (step.detailLocation || step.boardingStopName || '').match(/정류소\s*ID:\s*(\d+)/i);
@@ -255,13 +265,16 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
             setBusArrivals([est]);
           } else {
-            const est = calculateEstimatedArrival('연계버스', stopNameFallback);
+            const localFallback = findLocalConnectingBus(stopNameFallback, step.dropoffStopName || '', step.coords);
+            const fallbackNo = localFallback.busNo.split(/[\/,]/)[0] || '10';
+            const est = calculateEstimatedArrival(fallbackNo, stopNameFallback);
             setBusArrivals([est]);
           }
         } catch (e) {
           console.error(e);
           if (isMounted) {
-            const fallbackNo = primaryRouteNo || '연계버스';
+            const localFallback = findLocalConnectingBus(stopNameFallback, step.dropoffStopName || '', step.coords);
+            const fallbackNo = primaryRouteNo || localFallback.busNo.split(/[\/,]/)[0] || '10';
             const est = calculateEstimatedArrival(fallbackNo, stopNameFallback);
             setBusArrivals([est]);
           }
@@ -576,7 +589,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
               className="px-2 py-0.5 rounded text-[11px] font-black text-white shrink-0 shadow-sm"
               style={{ backgroundColor: activeBus.routeColor }}
             >
-              {activeBus.routeNo.includes('버스') ? activeBus.routeNo : `${activeBus.routeNo}번`}
+              {activeBus.routeNo === '연계버스' ? '시내 10번' : activeBus.routeNo.includes('버스') ? activeBus.routeNo : `${activeBus.routeNo}번`}
             </span>
 
             {/* 실시간 카운트다운 또는 배차 주기 도착 예정 시간 안내 */}
@@ -611,7 +624,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
                 {busArrivals.slice(1, 4).map((otherBus, idx) => {
                   if (!otherBus || !otherBus.routeNo) return null;
                   const otherFmt = formatBusArrivalTime(otherBus.arrTimeSec, otherBus.arrStationCount, isOrigin || otherBus.isOrigin);
-                  const otherRouteNo = String(otherBus.routeNo).includes('버스') ? otherBus.routeNo : `${otherBus.routeNo}번`;
+                  const otherRouteNo = otherBus.routeNo === '연계버스' ? '시내 98번' : String(otherBus.routeNo).includes('버스') ? otherBus.routeNo : `${otherBus.routeNo}번`;
                   return (
                     <span
                       key={otherBus.routeId || `${otherBus.routeNo}-${idx}`}
@@ -725,7 +738,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {displayBuses.map((bus, idx) => {
                 const busFmt = formatBusArrivalTime(bus.arrTimeSec, bus.arrStationCount, isOrigin || bus.isOrigin);
-                const displayRouteNo = bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
+                const displayRouteNo = bus.routeNo === '연계버스' ? '시내 10번' : bus.routeNo.includes('버스') ? bus.routeNo : `${bus.routeNo}번`;
 
                 return (
                   <div

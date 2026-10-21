@@ -320,7 +320,9 @@ const STATION_NODE_MAP: Record<string, { nodeId: string; cityCode: string; name:
   '22144':  { nodeId: 'GGB222000144', cityCode: '31120', name: '수평사거리.우림아파트' },
   '22145':  { nodeId: 'GGB222000145', cityCode: '31120', name: '수평사거리.우림아파트' },
   '22058':  { nodeId: 'GGB222000058', cityCode: '31120', name: '장자호수공원역.롯데.덕현아파트' },
-  '22072':  { nodeId: 'GGB222000072', cityCode: '31120', name: '장자호수공원역' }
+  '22072':  { nodeId: 'GGB222000072', cityCode: '31120', name: '장자호수공원역' },
+  '17347':  { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' },
+  '17476':  { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' }
 };
 
 export function deduceCityCode(coords?: { lat: number; lng: number }, name?: string): string {
@@ -330,9 +332,9 @@ export function deduceCityCode(coords?: { lat: number; lng: number }, name?: str
   if (n.includes('성남') || n.includes('분당') || n.includes('판교') || n.includes('모란') || n.includes('수진')) return '31020';
   if (n.includes('수원')) return '31010';
   if (n.includes('안양')) return '31040';
-  if (n.includes('안산')) return '31090';
+  if (n.includes('안산') || n.includes('해양') || n.includes('고잔') || n.includes('상록수') || n.includes('중앙역')) return '31090';
   if (n.includes('용인')) return '31190';
-  if (n.includes('화성')) return '31240';
+  if (n.includes('화성') || n.includes('동탄')) return '31240';
   if (n.includes('하남')) return '31180';
   if (n.includes('고양') || n.includes('일산')) return '31100';
   if (n.includes('부천')) return '31050';
@@ -392,6 +394,15 @@ export async function resolveStationNode(
   }
   if (name.includes('잠실역')) {
     return { nodeId: HUB_BUS_STOPS.jamsil_station.nodeId, cityCode: HUB_BUS_STOPS.jamsil_station.cityCode, name: HUB_BUS_STOPS.jamsil_station.name };
+  }
+  if (name.includes('해양중학교') || name.includes('해양중')) {
+    return { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' };
+  }
+  if (name.includes('그랑시티자이') || name.includes('자이정문')) {
+    return { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' };
+  }
+  if (name.includes('푸르지오6') || name.includes('푸르지오7')) {
+    return { nodeId: 'GGB216000353', cityCode: '31090', name: '푸르지오7차후문' };
   }
   if (name.includes('우림아파트') || name.includes('수평사거리')) {
     return { nodeId: 'GGB222000144', cityCode: '31120', name: '수평사거리.우림아파트' };

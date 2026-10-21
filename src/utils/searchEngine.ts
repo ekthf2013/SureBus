@@ -2,7 +2,7 @@ import { SearchParams, RouteCandidate, RouteStepItem, BadgeType } from '../types
 import { RouteData, STATION_COORDS } from '../data/initialBusData';
 import { getHaversineDistanceMeters, estimateWalkMinutes, parseTimeToMinutes, minutesToTimeString, subtractMinutesFromTime, addMinutesToTime } from './distance';
 import { SUBWAY_NETWORK_HUBS, SubwayStationInfo, buildSubwayRouteSteps, calculateSubwayRoute, normalizeStationName } from './subwayNetwork';
-import { findConnectingBus } from './connectingBusData';
+import { findConnectingBus, findLocalConnectingBus } from './connectingBusData';
 
 // 통근버스 요금 (일반 대중교통과 환승 할인 불가)
 const COMMUTE_BUS_FARE = 1500;
@@ -466,11 +466,11 @@ export function getOriginAccess(originLat: number, originLng: number, originName
   } else {
     // 800m 이상: 거주지 앞 시내/마을버스 연계 (평균 22km/h + 정류장 대기 4분)
     const busMins = Math.min(35, Math.round(distToHubMeters / 350) + 4);
-    const isWoolimGuri = (originName.includes('우림') || originName.includes('수평사거리')) && (hub.name.includes('장자호수') || hub.name.includes('구리'));
-    const busLineDesc = isWoolimGuri ? '마을 6-1번 등' : '연계 시내/마을버스';
-    const boardingName = isWoolimGuri ? '수평사거리.우림아파트' : `${originName} 인근 정류장`;
-    const dropoffName = `${hub.name} 정류장`;
-    const busNo = isWoolimGuri ? '6-1' : undefined;
+    const localBus = findLocalConnectingBus(originName, hub.name, { lat: originLat, lng: originLng });
+    const busLineDesc = localBus.busLineDesc;
+    const boardingName = localBus.boardingName || `${originName} 인근 정류장`;
+    const dropoffName = localBus.dropoffName || `${hub.name} 정류장`;
+    const busNo = localBus.busNo;
 
     return {
       minutes: busMins,
@@ -526,11 +526,11 @@ export function getDestAccess(destLat: number, destLng: number, destName: string
   } else {
     // 800m 이상: 시내/마을버스 환승 귀가
     const busMins = Math.min(35, Math.round(distToDestMeters / 350) + 4);
-    const isWoolimGuri = (destName.includes('우림') || destName.includes('수평사거리')) && (dropoffName.includes('장자호수') || dropoffName.includes('구리'));
-    const busLineDesc = isWoolimGuri ? '마을 6-1번 등' : '연계 시내/마을버스';
+    const localBus = findLocalConnectingBus(destName, dropoffName, { lat: destLat, lng: destLng });
+    const busLineDesc = localBus.busLineDesc;
     const boardingName = `${dropoffName} 버스환승정류장`;
-    const destStopName = isWoolimGuri ? '수평사거리.우림아파트' : `${destName} 앞 정류소`;
-    const busNo = isWoolimGuri ? '6-1' : undefined;
+    const destStopName = localBus.boardingName || `${destName} 앞 정류소`;
+    const busNo = localBus.busNo;
 
     return {
       minutes: busMins,
