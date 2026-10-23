@@ -4,6 +4,7 @@ import { matchScheduledSubwayDeparture } from './subwayApi';
 import { findConnectingBus, ConnectingBusOption } from './connectingBusData';
 import { minutesToTimeString, parseTimeToMinutes, getHaversineDistanceMeters } from './distance';
 import { applyEarlyBirdDiscount, applyUnifiedTransitFare, classifyTransitBus, calculateMetropolitanTransitFare } from './searchEngine';
+import { markOdsayQuotaExceeded } from './apiQuotaManager';
 
 export interface DynamicTransitPath {
   totalMinutes: number;
@@ -46,8 +47,18 @@ export async function getOptimalTransitRoute(
     try {
       const url = `/api/odsay/v1/api/searchPubTransPathT?SX=${startLng}&SY=${startLat}&EX=${destLng}&EY=${destLat}&apiKey=${encodeURIComponent(odsayApiKey)}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(3500) });
-      if (res.ok) {
+      if (!res.ok) {
+        if (res.status === 429) {
+          markOdsayQuotaExceeded();
+        }
+      } else {
         const json = await res.json();
+        if (json?.error) {
+          const errList = Array.isArray(json.error) ? json.error : [json.error];
+          if (errList.some((e: any) => e.code === '429' || String(e.message || '').includes('quota'))) {
+            markOdsayQuotaExceeded();
+          }
+        }
         const paths: any[] = json?.result?.path || [];
         const isOriginOrDestGtx = ['수서', '동탄', '성남', '구성'].some(st => startName.includes(st) || destName.includes(st));
 
@@ -164,13 +175,14 @@ function parseOdsayPath(
         id: `${baseId}-bus-${stepIdx++}`,
         type: 'public_bus',
         title: busTitle,
+        busNo: busNos.join('/'),
         subtitle: `${startStation} 정류장 승차 ➔ ${endStation} 하차 (${duration}분 소요, ${stCount}개 정류장)`,
         departureTime: deptStr,
         arrivalTime: arrStr,
         durationMinutes: duration,
         distanceMeters: sp.distance,
         fare: busInfo.baseFare,
-        note: `🚏 정류장: ${passStopSummary}`,
+        note: `🚏 탑승 정류소: ${startStation}${busNos.length > 0 ? ` (운행 노선: ${busNos.map((b: string) => `${b}번`).join(', ')})` : ''}${passStopSummary ? ` · 경유: ${passStopSummary}` : ''}`,
         detailLocation: `${startStation} (정류소 ID: ${sp.startID || '승차홈'})`,
         boardingStopName: `${startStation}${sp.startID ? ` (정류소 ID: ${sp.startID})` : ''}`,
         dropoffStopName: `${endStation}${sp.endID ? ` (정류소 ID: ${sp.endID})` : ''}`,
@@ -311,6 +323,7 @@ function calculateLocalTransitPath(
         arrivalTime: minutesToTimeString(busArrMins),
         durationMinutes: connectingBus.rideMinutes,
         fare: connectingBus.fare,
+        busNo: connectingBus.busNumber,
         note: `🚌 배차간격 약 ${connectingBus.intervalMinutes}분 · 시내버스 환승`
       },
       {
@@ -467,8 +480,20 @@ export async function fetchOdsayCandidates(params: SearchParams): Promise<RouteC
       signal: AbortSignal.timeout(4000)
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      if (res.status === 429) {
+        markOdsayQuotaExceeded();
+      }
+      return [];
+    }
     const json = await res.json();
+    if (json?.error) {
+      const errList = Array.isArray(json.error) ? json.error : [json.error];
+      if (errList.some((e: any) => e.code === '429' || String(e.message || '').includes('quota'))) {
+        markOdsayQuotaExceeded();
+      }
+      return [];
+    }
     const paths: any[] = json?.result?.path || [];
     if (!Array.isArray(paths) || paths.length === 0) return [];
 

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { RouteStepItem } from '../types/bus';
 import { fetchRealtimeSubwayArrival, cleanSubwayStationName, RealtimeArrival, SUBWAY_LINE_MAP, getSubwayScheduleInfo, deduplicateSubwayArrivals, generateDailySubwayTimetable } from '../utils/subwayApi';
 import { fetchLiveBusArrivals, fetchUpcomingBusesForRoute, fetchStationLiveArrivals, BusArrivalItem, formatBusArrivalTime, findNearestHubBusStop, getBusRouteConfig, calculateEstimatedArrival, isOriginStation } from '../utils/busLiveApi';
-import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw } from 'lucide-react';
+import { Train, Bus, Clock, MapPin, Zap, ChevronDown, ChevronUp, Layers, Calendar, Info, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useApiQuotaStatus } from '../utils/apiQuotaManager';
 
 interface LiveTransitStepBadgeProps {
   step: RouteStepItem;
@@ -47,28 +48,69 @@ export function getSubwayLineColor(lineNameOrId: string, fallbackTitle: string =
 }
 
 /**
- * 스텝 텍스트(제목, 상세, 노트 등)에서 복수 노선 번호(예: '87/332/311번', '87번, 332번', '6-1번 등')를 누락 없이 모두 추출합니다.
+ * 스텝 텍스트(제목, 상세, 노트 등)에서 복수 노선 번호(예: '95 · 5 · 6번', '87/332/311번', '6-1번 등')를 누락 없이 모두 추출합니다.
  */
 export function extractBusNumbers(text: string): string[] {
   const extracted = new Set<string>();
+  if (!text) return [];
 
-  // 1. 슬래시나 쉼표로 묶인 복수 번호 그룹 매칭 (예: 87/332/311번, 87, 332, 311번)
-  const groupMatches = [...text.matchAll(/([0-9A-Za-z-]+(?:\s*[\/,]\s*[0-9A-Za-z-]+)+)\s*번(?!\s*출구)/g)];
+  // 지하철 출구(N번 출구), 소요시간(N분), 경유 정류장수(N개), 호선(N호선) 등 오탐지 방지 전처리
+  const sanitized = text
+    .replace(/[0-9]+번\s*출구/g, ' ')
+    .replace(/[0-9]+분\s*(?:소요|도착|이동)?/g, ' ')
+    .replace(/[0-9]+개\s*정류장/g, ' ')
+    .replace(/[0-9]+호선/g, ' ');
+
+  // 1. "95 · 5 · 6번", "87/332/311번", "95, 5, 6번" 등 구분자로 연결된 복수 번호 그룹 매칭
+  const groupMatches = [...sanitized.matchAll(/([MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?(?:\s*[\/,·•|~&]\s*[MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?)+)\s*번?/gi)];
   for (const m of groupMatches) {
-    m[1].split(/[\/,]/).forEach(num => {
+    m[1].split(/[\/,·•|~&]/).forEach(num => {
       const c = num.trim().replace(/[^0-9A-Za-z-]/g, '');
-      if (c && !c.includes('출구')) extracted.add(c);
+      if (/^[MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?$/i.test(c)) {
+        extracted.add(c);
+      }
     });
   }
 
-  // 2. 단일 N번 버스 매칭 (예: 87번, 332번, M5107번)
-  const singleMatches = [...text.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGP]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번(?!\s*출구)/gi)];
+  // 2. 개별 "N번" 버스 매칭 (예: 95번, 6-1번, M5107번)
+  const singleMatches = [...sanitized.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번/gi)];
   for (const m of singleMatches) {
     const c = m[1].trim();
-    if (c) extracted.add(c);
+    if (/^[MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?$/i.test(c)) {
+      extracted.add(c);
+    }
   }
 
   return Array.from(extracted);
+}
+
+/**
+ * 대중교통 경로 스텝에서 실제 목적지로 향하는 탑승 대상 버스 노선 목록을 정확히 추출합니다.
+ * 하드코딩 없이 step.busNo 및 step.title/subtitle/note를 유기적으로 분석합니다.
+ */
+export function parseStepBusNumbers(step: RouteStepItem): string[] {
+  const result = new Set<string>();
+
+  // 1. step.busNo 우선 파싱 (예: '95/5/6', '95 · 5 · 6', '1007/6900', '87 · 332 · 311 등')
+  if (step.busNo && typeof step.busNo === 'string') {
+    const cleanBusNo = step.busNo.replace(/외\s*\d+개/g, ' ').replace(/등/g, ' ');
+    const tokens = cleanBusNo.split(/[\/,·•|~&\s]+/);
+    for (const token of tokens) {
+      const c = token.trim().replace(/번(버스)?$/, '').replace(/[^0-9A-Za-z-]/g, '');
+      if (/^[MGPND]?[0-9]+(?:-[0-9A-Za-z]+)?$/i.test(c) && !c.includes('출구')) {
+        result.add(c);
+      }
+    }
+  }
+
+  // 2. step.busNo에서 번호가 나오지 않았거나 없는 경우, title/subtitle/note에서 보조 추출
+  if (result.size === 0) {
+    const textSources = `${step.title || ''} ${step.subtitle || ''} ${step.note || ''}`;
+    const extracted = extractBusNumbers(textSources);
+    extracted.forEach(n => result.add(n));
+  }
+
+  return Array.from(result);
 }
 
 export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step }) => {
@@ -78,6 +120,15 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
   const [stationDisplayName, setStationDisplayName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [expanded, setExpanded] = useState<boolean>(false);
+  const quotaStatus = useApiQuotaStatus();
+
+  // 대상 노선 번호 목록 및 세트 (목적지로 향하는 버스만 엄격하게 필터링)
+  const routeNoList = React.useMemo(() => parseStepBusNumbers(step), [step]);
+  const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
+  const targetRouteSet = React.useMemo(
+    () => new Set(routeNoList.map(n => n.replace(/[^0-9A-Za-z]/g, '').toLowerCase())),
+    [routeNoList]
+  );
 
   // 지하철 호선 색상 및 스케줄 추출
   const { lineColor, scheduleInfo } = React.useMemo(() => {
@@ -164,25 +215,6 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           if (isMounted) setLoading(false);
         }
       } else if (step.type === 'public_bus') {
-        const fullText = (step.title + ' ' + (step.subtitle || '') + ' ' + (step.note || '')).trim();
-
-        // 탑승 대상 버스 노선 번호 추출
-        // ✅ step.busNo가 있으면 해당 노선만 사용 (다른 버스 번호를 텍스트에서 추가 파싱하지 않음)
-        // ✅ step.busNo가 없을 때만 제목/설명 텍스트에서 버스 번호를 보조 추출함
-        let routeNoList: string[] = [];
-        if (step.busNo) {
-          step.busNo.split(/[\/,]/).forEach(n => {
-            const clean = n.trim().replace(/[^0-9A-Za-z-]/g, '');
-            if (clean && !clean.includes('출구')) routeNoList.push(clean);
-          });
-        } else {
-          // busNo가 없을 때만 텍스트에서 복수 노선 파싱
-          const extractedFromText = extractBusNumbers(`${step.title} ${step.note || ''} ${step.subtitle || ''}`);
-          routeNoList = Array.from(new Set(extractedFromText));
-        }
-
-        const primaryRouteNo = routeNoList.length > 0 ? routeNoList[0] : '';
-
         // 2. 승차 정류장 판별 및 고유 정류소 ID 추출
         const stationIdMatch = (step.detailLocation || step.boardingStopName || '').match(/정류소\s*ID:\s*(\d+)/i);
         const odsayStationId = stationIdMatch ? stationIdMatch[1] : undefined;
@@ -213,7 +245,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
         setStationDisplayName(stopNameFallback);
         setLoading(true);
         try {
-          // 1. 해당 정류소에 실시간 도착 중인 모든 버스 목록 조회 (국토부 BIS 및 동적 정류소 배차 연동)
+          // 1. 해당 정류소에 실시간 도착 중인 버스 목록 조회 (국토부 BIS 및 동적 정류소 배차 연동)
           const liveStnBuses = await fetchStationLiveArrivals(
             stopKey, 
             odsayStationId, 
@@ -222,9 +254,8 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
             routeNoList
           );
           if (!isMounted) return;
-          setStationArrivals(liveStnBuses);
 
-          // 2. 탑승 대상 버스 도착 정보 매칭 (모든 노선 각각의 도착 정보 보장)
+          // 2. 🔥 목적지로 향하는 버스만 매칭 (정류소의 다른 무관한 버스는 완전 배제)
           const cleanTargetNos = routeNoList.map(n => n.replace(/[^0-9A-Za-z]/g, '').toLowerCase());
           const multiArrivals: BusArrivalItem[] = [];
 
@@ -240,7 +271,7 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
               if (matched.length > 0) {
                 multiArrivals.push(...matched);
               } else {
-                // 해당 노선이 BIS에 아직 안 떴더라도 배차 주기 기반 도착 예정 정보를 반드시 채움
+                // 해당 노선이 BIS에 아직 안 떴더라도 배차 주기 기반 도착 예정 정보를 채움
                 multiArrivals.push(calculateEstimatedArrival(rNo, stopNameFallback));
               }
             }
@@ -249,22 +280,28 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
           if (multiArrivals.length > 0) {
             multiArrivals.sort((a, b) => a.arrTimeSec - b.arrTimeSec);
             setBusArrivals(multiArrivals);
-          } else if (liveStnBuses.length > 0) {
-            setBusArrivals(liveStnBuses);
-          } else if (primaryRouteNo) {
-            // BIS에 일시적으로 안 잡힌 경우 배차 주기 기반 도착 예정 시간 자동 제공
-            const est = calculateEstimatedArrival(primaryRouteNo, stopNameFallback);
-            setBusArrivals([est]);
+            setStationArrivals(multiArrivals);
+          } else if (cleanTargetNos.length > 0) {
+            // 실시간 미수신 시 배차 주기 기반 생성 (해당 노선만)
+            const estList = routeNoList.map(rNo => calculateEstimatedArrival(rNo, stopNameFallback));
+            setBusArrivals(estList);
+            setStationArrivals(estList);
           } else {
-            // 특정 번호가 없는 일반 정류소 스텝인 경우 일반 시내버스 정규 배차 주기(약 7~8분)로 카운트다운 제공
-            const est = calculateEstimatedArrival('시내버스', stopNameFallback);
-            setBusArrivals([est]);
+            // 대상 노선이 없는 경우 정류소의 임의 버스들을 노출하지 않음
+            setBusArrivals([]);
+            setStationArrivals([]);
           }
         } catch (e) {
           console.error(e);
           if (isMounted) {
-            const est = calculateEstimatedArrival(primaryRouteNo || '시내버스', stopNameFallback);
-            setBusArrivals([est]);
+            if (routeNoList.length > 0) {
+              const estList = routeNoList.map(rNo => calculateEstimatedArrival(rNo, stopNameFallback));
+              setBusArrivals(estList);
+              setStationArrivals(estList);
+            } else {
+              setBusArrivals([]);
+              setStationArrivals([]);
+            }
           }
         } finally {
           if (isMounted) setLoading(false);
@@ -514,10 +551,6 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
   if (step.type === 'public_bus') {
     const primaryBus = busArrivals[0];
 
-    // 버스 번호 힌트 추출 (step.busNo 최우선)
-    const titleMatches = [...step.title.matchAll(/(?:간선|지선|광역|시내|마을)?\s*([MGP]?[0-9]+(?:-[0-9A-Za-z]+)?)\s*번(?!\s*출구)/gi)];
-    const primaryRouteNo = step.busNo || (titleMatches.length > 0 ? titleMatches[0][1] : '');
-
     if (loading) {
       return (
         <div className="mt-2 rounded-xl border border-cyan-500/30 bg-slate-900/60 p-2.5 flex items-center justify-between gap-2 text-xs animate-pulse">
@@ -536,25 +569,65 @@ export const LiveTransitStepBadge: React.FC<LiveTransitStepBadgeProps> = ({ step
       );
     }
 
+    if (!primaryRouteNo && busArrivals.length === 0 && stationArrivals.length === 0) {
+      if (quotaStatus.isExceeded) {
+        return (
+          <div className="mt-2 rounded-xl border border-rose-500/40 bg-gradient-to-r from-rose-950/40 via-slate-900/90 to-amber-950/30 p-2.5 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <Bus className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="font-bold text-rose-300">
+                  대중교통 길찾기 API 일일 사용량 소진
+                </span>
+                <span className="text-[10px] text-slate-300 block truncate mt-0.5">
+                  카카오/ODsay API 일일 무료 쿼터 초과로 주변 정류장/버스 정보 조회가 제한되었습니다.
+                </span>
+              </div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold shrink-0">
+              API 사용 종료
+            </span>
+          </div>
+        );
+      }
+      return (
+        <div className="mt-2 rounded-xl border border-slate-700/60 bg-slate-900/40 p-2.5 flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="text-slate-300">실시간 연계 버스 정보 없음</span>
+          </div>
+        </div>
+      );
+    }
+
     const isOrigin = isOriginStation(stationDisplayName) || isOriginStation(step.boardingStopName || '');
-    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : (busArrivals[0] || stationArrivals[0] || calculateEstimatedArrival('시내버스', stationDisplayName)));
+    const activeBus = primaryBus || (primaryRouteNo ? calculateEstimatedArrival(primaryRouteNo, stationDisplayName) : (busArrivals[0] || stationArrivals[0] || calculateEstimatedArrival(primaryRouteNo || '버스', stationDisplayName)));
 
     const formatted = formatBusArrivalTime(activeBus.arrTimeSec, activeBus.arrStationCount, isOrigin || activeBus.isOrigin);
 
     // 통합 전광판에 표시할 고유 버스 목록 (React Hooks 규칙 준수를 위해 순수 계산식으로 처리)
+    // 🔥 목적지로 향하는 버스만 엄격하게 필터링하여 노출 (하드코딩 배제, 무관한 타 방면 버스 제외)
     const sourceList = busArrivals.length > 0 ? busArrivals : stationArrivals.length > 0 ? stationArrivals : [activeBus];
     const seenRoutes = new Set<string>();
     const displayBuses: BusArrivalItem[] = [];
     for (const b of sourceList) {
       if (!b || !b.routeNo) continue;
       const key = String(b.routeNo).replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+      // 🔥 목적지행 노선만 필터링: routeNoList에 명시된 노선만 전광판에 노출
+      if (targetRouteSet.size > 0) {
+        if (!targetRouteSet.has(key)) continue;
+      } else {
+        // 타야 하는 노선이 지정되지 않은 경우, 정류소의 무관한 모든 버스를 임의 노출하지 않고 최대 1개만 유지
+        if (displayBuses.length >= 1) break;
+      }
       if (!seenRoutes.has(key)) {
         seenRoutes.add(key);
         displayBuses.push(b);
       }
     }
     displayBuses.sort((a, b) => (a.arrTimeSec || 0) - (b.arrTimeSec || 0));
-    if (displayBuses.length === 0) displayBuses.push(activeBus);
+    if (displayBuses.length === 0 && activeBus) displayBuses.push(activeBus);
 
     return (
       <div

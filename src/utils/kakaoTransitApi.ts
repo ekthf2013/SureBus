@@ -1,6 +1,7 @@
 import { RouteCandidate, RouteStepItem, SearchParams } from '../types/bus';
 import { parseTimeToMinutes, minutesToTimeString, getHaversineDistanceMeters } from './distance';
 import { applyUnifiedTransitFare, classifyTransitBus } from './searchEngine';
+import { markKakaoQuotaExceeded } from './apiQuotaManager';
 
 const HQ_LAT = 37.40698104234706;
 const HQ_LNG = 127.08871065248748;
@@ -106,6 +107,11 @@ export async function callKakaoPublicTraffic(
           transitCache.set(cacheKey, json);
           return json;
         }
+      } else {
+        const errJson = await res.json().catch(() => null);
+        if (res.status === 429 || res.status === 400 || errJson?.code === -10 || errJson?.message?.includes('API limit')) {
+          markKakaoQuotaExceeded();
+        }
       }
     } catch {
       // try next url or return null
@@ -140,21 +146,45 @@ export async function fetchDynamicFeederBus(
   const vehicleObjects: Array<{ name: string; type: string }> = [];
   const allStops: string[] = [];
 
+  // 1. 최적 직통 경로의 승차/하차 정류장 확정
+  let targetEndStop = '';
   for (const route of json.routes) {
     const busStep = route.steps?.find((s: any) => s.properties?.type === 'BUS');
     if (busStep && busStep.properties) {
       const p = busStep.properties;
       const stops = (p.stops || []).map((st: any) => cleanGuidance(st.name)).filter(Boolean);
-      if (!firstStop && stops[0]) firstStop = stops[0];
-      if (!lastStop && stops[stops.length - 1]) lastStop = stops[stops.length - 1];
-      if (!duration && p.time) duration = Math.max(2, Math.round(p.time / 60));
-      if (!distance && p.distance) distance = p.distance;
-      if (!coords && busStep.path?.points?.[0]) {
-        coords = { lat: busStep.path.points[0][1], lng: busStep.path.points[0][0] };
-      }
-      if (allStops.length === 0 && stops.length > 0) {
+      if (stops.length > 0) {
+        firstStop = stops[0];
+        lastStop = stops[stops.length - 1];
+        targetEndStop = lastStop.replace(/(\d+번출구|\d+호선|출구)/g, '').trim();
+        duration = Math.max(2, Math.round(p.time / 60));
+        distance = p.distance || 0;
+        if (busStep.path?.points?.[0]) {
+          coords = { lat: busStep.path.points[0][1], lng: busStep.path.points[0][0] };
+        }
         allStops.push(...stops);
+        break;
       }
+    }
+  }
+
+  if (!firstStop || !lastStop) return null;
+
+  // 2. 동일 출발 정류소에서 동일 하차 정류소(또는 거점역)로 운행하는 직통 버스만 수집 (무관한 타 방면 버스 완전 배제)
+  for (const route of json.routes) {
+    const busStep = route.steps?.find((s: any) => s.properties?.type === 'BUS');
+    if (busStep && busStep.properties) {
+      const p = busStep.properties;
+      const stops = (p.stops || []).map((st: any) => cleanGuidance(st.name)).filter(Boolean);
+      const routeLastStop = stops[stops.length - 1] || '';
+      const cleanRouteLast = routeLastStop.replace(/(\d+번출구|\d+호선|출구)/g, '').trim();
+
+      // 같은 하차 정류소(또는 동일 거점 전철역 방면)로 가는 노선만 허용 (다른 곳으로 빠지는 버스 완전 배제)
+      const isSameDestination = cleanRouteLast === targetEndStop || 
+        cleanRouteLast.includes(targetEndStop) || 
+        targetEndStop.includes(cleanRouteLast);
+
+      if (!isSameDestination) continue;
 
       for (const v of (p.vehicles || [])) {
         const vName = String(v.name || '').trim();
@@ -166,11 +196,11 @@ export async function fetchDynamicFeederBus(
     }
   }
 
-  if (!firstStop || vehicleObjects.length === 0) return null;
+  if (vehicleObjects.length === 0) return null;
 
   const vList = Array.from(vehicleSet);
   const busNo = vList.join('/');
-  const busLineDesc = '시내 ' + vList.slice(0, 3).map(v => `${v}번`).join(' · ') + (vList.length > 3 ? ' 등' : '');
+  const busLineDesc = '시내 ' + (vList.length <= 4 ? vList.map(v => `${v}번`).join(' · ') : `${vList.slice(0, 3).map(v => `${v}번`).join(' · ')} 외 ${vList.length - 3}개`);
 
   const result: FeederBusInfo = {
     startStopName: firstStop,

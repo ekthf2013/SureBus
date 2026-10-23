@@ -33,8 +33,6 @@ export const RealtimeBusWidget: React.FC<RealtimeBusWidgetProps> = ({
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 30000); // 30초 주기 실시간 갱신
-    return () => clearInterval(interval);
   }, [loadData]);
 
   return (
@@ -54,20 +52,21 @@ export const RealtimeBusWidget: React.FC<RealtimeBusWidgetProps> = ({
               </span>
             </h4>
             <p className="text-[10px] text-slate-400 truncate">
-              {lastUpdated ? `공공데이터포털 API 연동 (갱신: ${lastUpdated})` : '국토교통부 대중교통 API 연동'}
+              {lastUpdated ? `조회 시각: ${lastUpdated} (새로고침 버튼 클릭 시 갱신)` : '국토교통부 대중교통 API 연동'}
             </p>
           </div>
         </div>
 
-        {/* Refresh Button */}
+        {/* User-Triggered Refresh Button */}
         <button
           type="button"
           onClick={loadData}
           disabled={loading}
-          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/80 transition-all cursor-pointer shrink-0"
+          className="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
           title="실시간 도착정보 새로고침"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+          <span>새로고침</span>
         </button>
       </div>
 

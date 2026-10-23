@@ -215,11 +215,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                 setMode('commute_in');
                 setTargetTime('08:30');
               }}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                mode === 'commute_in'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${mode === 'commute_in'
+                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               <Sun className="w-4 h-4 text-amber-300" />
               🌅 오늘 출근 (회사 도착)
@@ -230,11 +229,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                 setMode('commute_out');
                 setTargetTime('18:00');
               }}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                mode === 'commute_out'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white shadow-lg shadow-purple-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${mode === 'commute_out'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white shadow-lg shadow-purple-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               <Moon className="w-4 h-4 text-indigo-300" />
               🌃 오늘 퇴근 (회사 출발)
@@ -246,7 +244,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
             <label className="block text-xs font-semibold text-slate-300 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-emerald-400" />
-                {mode === 'commute_in' ? '출발지 (집, 건물명, 지번/도로명 주소, 전국 어디든)' : '퇴근 목적지 (집, 약속 장소, 전국 어디든)'}
+                {mode === 'commute_in' ? '출발지' : '퇴근 목적지'}
               </span>
               <span className="text-[11px] text-slate-500 font-normal">
                 {mode === 'commute_in' ? '🏢 도착지: 슈어소프트 사옥' : '🏢 출발지: 슈어소프트 사옥'}
@@ -276,7 +274,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                         setShowDropdown(results.length > 0);
                       }
                     }}
-                    placeholder={mode === 'commute_in' ? "출발지를 입력해 주세요 (주소, 아파트명, 건물명)" : "목적지를 입력해 주세요 (주소, 아파트명, 건물명)"}
+                    placeholder={mode === 'commute_in' ? "출발지를 입력해 주세요" : "목적지를 입력해 주세요"}
                     className="glass-input w-full px-4 py-2.5 pl-9 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500"
                   />
                   <Search className={`w-4 h-4 absolute left-3 top-3 ${isSearching ? 'text-indigo-400 animate-spin' : 'text-slate-400'}`} />
@@ -363,15 +361,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                     key={preset.name}
                     type="button"
                     onClick={() => handleSelectPreset(preset)}
-                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
-                      originName.includes(preset.name)
-                        ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/50 font-semibold shadow-sm'
-                        : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-                    }`}
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${originName.includes(preset.name)
+                      ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/50 font-semibold shadow-sm'
+                      : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
+                      }`}
                   >
-                    <span className={`text-[9px] px-1 py-0.2 rounded font-extrabold ${
-                      preset.badge === '셔틀' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                    }`}>
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-extrabold ${preset.badge === '셔틀' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      }`}>
                       {preset.badge}
                     </span>
                     <span>{preset.label}</span>
@@ -386,7 +382,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-indigo-400" />
-                {mode === 'commute_in' ? '회사 도착 희망시간' : '회사 출발 희망시간'}
+                {mode === 'commute_in' ? '회사 도착 희망시간' : '회사 출발 시간'}
               </label>
               <button
                 type="button"
@@ -420,26 +416,24 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                       key={t}
                       type="button"
                       onClick={() => handleTimeChange(t)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                        targetTime === t
-                          ? 'bg-indigo-600 text-white font-bold border-indigo-400 shadow-md'
-                          : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                      }`}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${targetTime === t
+                        ? 'bg-indigo-600 text-white font-bold border-indigo-400 shadow-md'
+                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                        }`}
                     >
                       {t}
                     </button>
                   ))
                 ) : (
-                  ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00'].map((t) => (
+                  ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'].map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => handleTimeChange(t)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                        targetTime === t
-                          ? 'bg-purple-600 text-white font-bold border-purple-400 shadow-md'
-                          : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                      }`}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${targetTime === t
+                        ? 'bg-purple-600 text-white font-bold border-purple-400 shadow-md'
+                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                        }`}
                     >
                       {t}
                     </button>
@@ -455,7 +449,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
             className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            최적 맞춤 경로 다시 계산하기
+            최적 맞춤 경로 계산하기
           </button>
         </form>
       </div>

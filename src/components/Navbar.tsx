@@ -15,19 +15,29 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         {/* Brand Logo */}
         <div 
           onClick={() => setActiveTab('search')}
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-400 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Bus className="w-5 h-5 text-emerald-400" />
-            </div>
+          {/* SURESOFT Official Logo Badge */}
+          <div className="h-9 px-3 py-1.5 bg-white rounded-xl shadow-md shadow-blue-500/10 border border-white/60 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-blue-500/30 transition-all">
+            <img 
+              src="/suresoft_logo.png" 
+              alt="SURESOFT" 
+              className="h-4.5 w-[96px] object-contain shrink-0 block"
+              width={1024}
+              height={194}
+            />
           </div>
-          <div>
-            <h1 className="font-extrabold text-base sm:text-lg bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
-              사옥 출퇴근 최적 경로
-            </h1>
-            <p className="text-[11px] text-emerald-400 font-medium tracking-wide">
-              통근·셔틀·대중교통 스마트 추천
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="font-black text-base sm:text-lg bg-gradient-to-r from-white via-slate-100 to-sky-200 bg-clip-text text-transparent tracking-tight whitespace-nowrap">
+                슈어버스
+              </h1>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 font-bold shrink-0">
+                판교 사옥
+              </span>
+            </div>
+            <p className="text-[11px] text-sky-400 font-medium tracking-wide whitespace-nowrap">
+              사옥 출퇴근 최적 경로 안내
             </p>
           </div>
         </div>
@@ -38,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('search')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'search'
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
@@ -49,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('routes')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'routes'
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
@@ -60,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('timetable')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'timetable'
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
@@ -71,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('favorites')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'favorites'
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
@@ -82,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('admin')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'admin'
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
@@ -97,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <button
           onClick={() => setActiveTab('search')}
           className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'search' ? 'text-indigo-400' : 'text-slate-400'
+            activeTab === 'search' ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
           <Navigation className="w-5 h-5" />
@@ -106,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <button
           onClick={() => setActiveTab('routes')}
           className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'routes' ? 'text-indigo-400' : 'text-slate-400'
+            activeTab === 'routes' ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
           <Map className="w-5 h-5" />
@@ -115,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <button
           onClick={() => setActiveTab('timetable')}
           className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'timetable' ? 'text-indigo-400' : 'text-slate-400'
+            activeTab === 'timetable' ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
           <Clock className="w-5 h-5" />
@@ -124,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <button
           onClick={() => setActiveTab('favorites')}
           className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'favorites' ? 'text-indigo-400' : 'text-slate-400'
+            activeTab === 'favorites' ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
           <Star className="w-5 h-5" />
@@ -133,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <button
           onClick={() => setActiveTab('admin')}
           className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'admin' ? 'text-indigo-400' : 'text-slate-400'
+            activeTab === 'admin' ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
           <Upload className="w-5 h-5" />

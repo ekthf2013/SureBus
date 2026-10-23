@@ -1,8 +1,4 @@
-/**
- * 국토교통부 대중교통 / 공공데이터포털 실시간 버스 도착정보 API 클라이언트
- * API Key: .env의 VITE_PUBLIC_DATA_API_KEY 에서 로드
- * https://www.data.go.kr/iim/api/selectAPIAcountView.do
- */
+import { markOdsayQuotaExceeded } from './apiQuotaManager';
 
 export interface BusArrivalItem {
   routeId?: string;
@@ -309,24 +305,14 @@ export function getBusRouteConfig(routeNo: string, apiRouteType?: string): BusRo
   return { type: '시내버스', color: '#0284c7', intervalMin: 8 };
 }
 
-// ODsay station ID -> TAGO nodeId 사전 매핑 캐시 (속도 최적화)
+// ODsay station ID -> TAGO nodeId 사전 매핑 캐시 (속도 최적화 - 사옥 통근 핵심 거점)
 const STATION_NODE_MAP: Record<string, { nodeId: string; cityCode: string; name: string }> = {
   '113293': { nodeId: 'GGB205000135', cityCode: '31020', name: '성남농협' },
   '90827':  { nodeId: 'GGB205000368', cityCode: '31020', name: '모란역5번출구' },
   '189098': { nodeId: 'GGB205000243', cityCode: '31020', name: '모란차량기지앞' },
   '5019348': { nodeId: 'GGB204000159', cityCode: '31020', name: '벤처타운(북문)' },
   '109513': { nodeId: 'GGB205000021', cityCode: '31020', name: '모란역2.3번출구' },
-  '113142': { nodeId: 'GGB205000086', cityCode: '31020', name: '모란역.모란시장입구' },
-  '22144':  { nodeId: 'GGB221000098', cityCode: '31120', name: '청소년문화의집.우림아파트' },
-  '22145':  { nodeId: 'GGB221000114', cityCode: '31120', name: '청소년문화의집.우림아파트' },
-  '22058':  { nodeId: 'GGB221000078', cityCode: '31120', name: '장자호수공원역1번출구' },
-  '22072':  { nodeId: 'GGB221000109', cityCode: '31120', name: '장자호수공원역3번출구' },
-  '17347':  { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' },
-  '17476':  { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' },
-  '94369':  { nodeId: 'GGB204000268', cityCode: '31020', name: '신흥역.종합시장' },
-  '94370':  { nodeId: 'GGB205000001', cityCode: '31020', name: '신흥역.종합시장' },
-  '94368':  { nodeId: 'GGB204000008', cityCode: '31020', name: '신흥역.종합시장(광역)' },
-  '94371':  { nodeId: 'GGB205000002', cityCode: '31020', name: '수진역.성호시장.성일중고입구' }
+  '113142': { nodeId: 'GGB205000086', cityCode: '31020', name: '모란역.모란시장입구' }
 };
 
 export function deduceCityCode(coords?: { lat: number; lng: number }, name?: string): string {
@@ -336,7 +322,7 @@ export function deduceCityCode(coords?: { lat: number; lng: number }, name?: str
   if (n.includes('성남') || n.includes('분당') || n.includes('판교') || n.includes('모란') || n.includes('수진')) return '31020';
   if (n.includes('수원')) return '31010';
   if (n.includes('안양')) return '31040';
-  if (n.includes('안산') || n.includes('해양') || n.includes('고잔') || n.includes('상록수') || n.includes('중앙역')) return '31090';
+  if (n.includes('안산') || n.includes('고잔') || n.includes('상록수') || n.includes('중앙역')) return '31090';
   if (n.includes('용인')) return '31190';
   if (n.includes('화성') || n.includes('동탄')) return '31240';
   if (n.includes('하남')) return '31180';
@@ -377,7 +363,7 @@ export async function resolveStationNode(
     return { nodeId: hub.nodeId, cityCode: hub.cityCode, name: hub.name };
   }
 
-  // 3. 정류소명 기반 핵심 거점 매핑 (사옥 앞, 모란역, 판교역 등)
+  // 3. 정류소명 기반 핵심 거점 매핑 (사옥 앞, 모란역, 판교역 등 사내 통근 거점)
   if (name.includes('기업지원허브') || name.includes('판교제2') || name.includes('인피니티타워') || (name.includes('사옥') && !name.includes('출발'))) {
     return { nodeId: HUB_BUS_STOPS.hq.nodeId, cityCode: HUB_BUS_STOPS.hq.cityCode, name: HUB_BUS_STOPS.hq.name };
   }
@@ -398,39 +384,6 @@ export async function resolveStationNode(
   }
   if (name.includes('잠실역')) {
     return { nodeId: HUB_BUS_STOPS.jamsil_station.nodeId, cityCode: HUB_BUS_STOPS.jamsil_station.cityCode, name: HUB_BUS_STOPS.jamsil_station.name };
-  }
-  if (name.includes('해양중학교') || name.includes('해양중')) {
-    return { nodeId: 'GGB216000349', cityCode: '31090', name: '해양중학교' };
-  }
-  if (name.includes('그랑시티자이') || name.includes('자이정문')) {
-    return { nodeId: 'GGB216000360', cityCode: '31090', name: '그랑시티자이정문' };
-  }
-  if (name.includes('푸르지오6') || name.includes('푸르지오7')) {
-    return { nodeId: 'GGB216000353', cityCode: '31090', name: '푸르지오7차후문' };
-  }
-  if (name.includes('우림아파트') || name.includes('수평사거리') || name.includes('청소년문화의집')) {
-    return { nodeId: 'GGB221000098', cityCode: '31120', name: '청소년문화의집.우림아파트' };
-  }
-  if (name.includes('장자호수공원') || name.includes('장자호수')) {
-    return { nodeId: 'GGB221000078', cityCode: '31120', name: '장자호수공원역1번출구' };
-  }
-  if (name.includes('구리역')) {
-    return { nodeId: 'GGB222000021', cityCode: '31120', name: '구리역.롯데백화점' };
-  }
-  if (name.includes('범계역')) {
-    return { nodeId: 'GGB208000100', cityCode: '31040', name: '범계역.엔씨백화점' };
-  }
-  if (name.includes('수원역')) {
-    return { nodeId: 'GGB200000103', cityCode: '31010', name: '수원역.AK플라자' };
-  }
-  if (name.includes('상록수역')) {
-    return { nodeId: 'GGB216000057', cityCode: '31090', name: '상록수역' };
-  }
-  if (name.includes('신흥역') || name.includes('종합시장')) {
-    return { nodeId: 'GGB204000268', cityCode: '31020', name: '신흥역.종합시장' };
-  }
-  if (name.includes('수진역')) {
-    return { nodeId: 'GGB205000002', cityCode: '31020', name: '수진역.성호시장.성일중고입구' };
   }
 
   // 4. 좌표 기반 초근접(350m 이내) 거점 정류소 감지
@@ -537,8 +490,20 @@ export async function fetchOdsayRealtimeArrivals(
       signal: AbortSignal.timeout(5000),
       headers: (typeof window === 'undefined') ? { 'Referer': 'http://localhost:5173/', 'Origin': 'http://localhost:5173' } : undefined
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      if (res.status === 429) {
+        markOdsayQuotaExceeded();
+      }
+      return [];
+    }
     const data = await res.json();
+    if (data?.error) {
+      const errList = Array.isArray(data.error) ? data.error : [data.error];
+      if (errList.some((e: any) => e.code === '429' || String(e.message || '').includes('quota'))) {
+        markOdsayQuotaExceeded();
+      }
+      return [];
+    }
     const realList = data?.result?.real;
     if (!Array.isArray(realList) || realList.length === 0) return [];
 
