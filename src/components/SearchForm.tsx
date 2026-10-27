@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SearchParams, CommuteMode, PreferenceOption } from '../types/bus';
 import { PRESET_LOCATIONS, PresetLocation } from '../utils/distance';
 import { searchKakaoPlaces, KakaoPlaceItem } from '../utils/kakaoPlaceSearch';
+import { loadKakaoMapSDK } from '../utils/kakaoMapLoader';
 import { MapPin, Clock, Search, Navigation, Sun, Moon, Sparkles, Building2, Train } from 'lucide-react';
 
 interface SearchFormProps {
@@ -28,6 +29,11 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 컴포넌트 마운트 시 카카오 SDK 사전 로딩
+  useEffect(() => {
+    loadKakaoMapSDK().catch(() => {});
+  }, []);
 
   // 검색어 입력 시 카카오 장소 검색 디바운스
   useEffect(() => {
