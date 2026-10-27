@@ -42,7 +42,7 @@ export async function getOptimalTransitRoute(
   // -----------------------------------------------------------------
   // 1. ODsay 대중교통 길찾기 API 연동 시도 (완전 자동 대중교통 API)
   // -----------------------------------------------------------------
-  const odsayApiKey = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_ODSAY_API_KEY : process.env.VITE_ODSAY_API_KEY;
+  const odsayApiKey = ((typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_ODSAY_API_KEY : process.env.VITE_ODSAY_API_KEY) || 's5yBNr5+2Nns1nGrvy/TdA';
   if (odsayApiKey && startLat !== 0 && destLat !== 0) {
     try {
       const url = `/api/odsay/v1/api/searchPubTransPathT?SX=${startLng}&SY=${startLat}&EX=${destLng}&EY=${destLat}&apiKey=${encodeURIComponent(odsayApiKey)}`;
@@ -457,9 +457,9 @@ export async function fetchOdsayCandidates(params: SearchParams): Promise<RouteC
   if (!filters.usePublicTransit || filters.useCompanyBusOnly) return [];
   if (!originName || (originLat === 0 && originLng === 0)) return [];
 
-  const odsayApiKey = (typeof import.meta !== 'undefined' && import.meta.env)
+  const odsayApiKey = ((typeof import.meta !== 'undefined' && import.meta.env)
     ? import.meta.env.VITE_ODSAY_API_KEY
-    : process.env.VITE_ODSAY_API_KEY;
+    : process.env.VITE_ODSAY_API_KEY) || 's5yBNr5+2Nns1nGrvy/TdA';
 
   if (!odsayApiKey) return [];
 

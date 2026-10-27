@@ -36,7 +36,7 @@ export async function searchKakaoPlaces(query: string): Promise<KakaoPlaceItem[]
   };
 
   // 1. 카카오 REST API 시도 (키가 있고 쿼터가 남아있는 경우)
-  const restKey = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_KAKAO_REST_KEY : undefined;
+  const restKey = ((typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_KAKAO_REST_KEY : undefined) || '8d38096e3c6e5c2f30656aad156def02';
   if (restKey) {
     try {
       const keywordUrl = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(trimmed)}&size=6`;

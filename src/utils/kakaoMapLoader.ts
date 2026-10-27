@@ -18,7 +18,7 @@ export const loadKakaoMapSDK = (): Promise<void> => {
       return;
     }
 
-    const appKey = import.meta.env.VITE_KAKAO_JS_KEY as string;
+    const appKey = (import.meta.env.VITE_KAKAO_JS_KEY as string) || 'd705565e259dda64b16999dd6f10f93e';
     if (!appKey) {
       reject(new Error('[KakaoMap] VITE_KAKAO_JS_KEY 환경변수가 설정되지 않았습니다. .env 파일을 확인하세요.'));
       return;

@@ -479,8 +479,7 @@ export async function fetchOdsayRealtimeArrivals(
   stopName: string
 ): Promise<BusArrivalItem[]> {
   const odsayApiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ODSAY_API_KEY)
-    ? import.meta.env.VITE_ODSAY_API_KEY
-    : (process.env.VITE_ODSAY_API_KEY || 's5yBNr5+2Nns1nGrvy/TdA');
+    || (process.env.VITE_ODSAY_API_KEY || 's5yBNr5+2Nns1nGrvy/TdA');
   if (!odsayApiKey || !odsayStationId) return [];
 
   try {
@@ -576,8 +575,7 @@ export async function fetchLiveBusArrivals(
   operatingRouteNos?: string[]
 ): Promise<BusArrivalItem[]> {
   const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_DATA_API_KEY)
-    ? import.meta.env.VITE_PUBLIC_DATA_API_KEY
-    : (process.env.VITE_PUBLIC_DATA_API_KEY || '16fe204a39076106ae76e7bf66431f1c4dfbc2da6fc26bc293f82111c29fbe9e');
+    || (process.env.VITE_PUBLIC_DATA_API_KEY || '16fe204a39076106ae76e7bf66431f1c4dfbc2da6fc26bc293f82111c29fbe9e');
   const resolved = await resolveStationNode(odsayStationId || stopKeyOrId, stopNameFallback, coords);
   const stopName = stopNameFallback || resolved?.name || (stopKeyOrId && HUB_BUS_STOPS[stopKeyOrId]?.name) || '인근 정류소';
   const now = new Date();

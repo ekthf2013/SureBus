@@ -52,7 +52,7 @@ function getKakaoRestKey(): string {
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_KAKAO_REST_KEY) {
     return import.meta.env.VITE_KAKAO_REST_KEY;
   }
-  return '';
+  return '8d38096e3c6e5c2f30656aad156def02';
 }
 
 /**

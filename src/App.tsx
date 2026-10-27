@@ -6,7 +6,6 @@ import { RouteDetailModal } from './components/RouteDetailModal';
 import { MapView } from './components/MapView';
 import { TimetableExplorer } from './components/TimetableExplorer';
 import { FullRouteMap } from './components/FullRouteMap';
-import { ExcelImporter } from './components/ExcelImporter';
 import { FavoritesManager } from './components/FavoritesManager';
 
 import { SearchParams, RouteCandidate, UserFavorite } from './types/bus';
@@ -549,9 +548,6 @@ export const App: React.FC = () => {
         {activeTab === 'favorites' && (
           <FavoritesManager onSelectFavorite={handleSelectFavorite} />
         )}
-
-        {/* Tab 5: Admin Excel Importer */}
-        {activeTab === 'admin' && <ExcelImporter />}
       </main>
 
       {/* Detail Timeline Modal (별도 팝업 보기 버튼을 눌렀을 때만 열림) */}

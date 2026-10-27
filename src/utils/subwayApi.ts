@@ -1186,7 +1186,7 @@ export async function fetchRealtimeSubwayArrival(
   lineHint: string = '',
   directionHint: string = ''
 ): Promise<RealtimeArrival[]> {
-  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SEOUL_METRO_API_KEY) || 'sample';
+  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SEOUL_METRO_API_KEY) || '626d564950656b743337597876534a';
   const stationClean = cleanSubwayStationName(rawStationName);
   if (!stationClean) return [];
 

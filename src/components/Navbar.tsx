@@ -1,7 +1,7 @@
 import React from 'react';
-import { Bus, Map, Clock, Upload, Star, Navigation } from 'lucide-react';
+import { Map, Clock, Star, Navigation } from 'lucide-react';
 
-export type NavTab = 'search' | 'routes' | 'timetable' | 'favorites' | 'admin';
+export type NavTab = 'search' | 'routes' | 'timetable' | 'favorites';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -88,17 +88,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             <Star className="w-4 h-4" />
             즐겨찾기
           </button>
-          <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'admin'
-                ? 'bg-blue-600/20 text-sky-300 border border-blue-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            Excel Import
-          </button>
         </nav>
       </div>
 
@@ -139,15 +128,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         >
           <Star className="w-5 h-5" />
           즐겨찾기
-        </button>
-        <button
-          onClick={() => setActiveTab('admin')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-3 rounded-lg ${
-            activeTab === 'admin' ? 'text-sky-400' : 'text-slate-400'
-          }`}
-        >
-          <Upload className="w-5 h-5" />
-          Import
         </button>
       </div>
     </header>
