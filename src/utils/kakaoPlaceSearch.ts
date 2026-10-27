@@ -20,12 +20,12 @@ export interface KakaoPlaceItem {
 async function searchWithKakaoSDK(query: string): Promise<KakaoPlaceItem[]> {
   if (typeof window === 'undefined') return [];
 
-  // SDK가 아직 로딩 중이라면 최대 800ms 동안 대기
+  // SDK가 아직 로딩 중이라면 최대 3000ms 동안 대기
   if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
     try {
       await Promise.race([
         loadKakaoMapSDK(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 800))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
       ]);
     } catch {
       // SDK 로딩 실패 또는 타임아웃 시 진행
@@ -45,35 +45,39 @@ async function searchWithKakaoSDK(query: string): Promise<KakaoPlaceItem[]> {
     }
   };
 
-  // 1) Places: 키워드 장소 검색 (아파트, 회사, 역, 정류장, 랜드마크 등)
+  // 1) Places: 키워드 장소 검색 (아파트, 회사, 역, 정류장, 랜드마크 등 - size 15)
   const placesPromise = new Promise<void>((resolve) => {
     try {
       const places = new window.kakao.maps.services.Places();
-      places.keywordSearch(query, (result, status) => {
-        if (status === window.kakao.maps.services.Status.OK && Array.isArray(result)) {
-          for (const doc of result) {
-            let cat = doc.category_group_name || '';
-            if (!cat && doc.category_name) {
-              const parts = doc.category_name.split('>');
-              cat = parts[parts.length - 1].trim();
-            }
-            if (!cat) cat = '장소';
+      places.keywordSearch(
+        query,
+        (result, status) => {
+          if (status === window.kakao.maps.services.Status.OK && Array.isArray(result)) {
+            for (const doc of result) {
+              let cat = doc.category_group_name || '';
+              if (!cat && doc.category_name) {
+                const parts = doc.category_name.split('>');
+                cat = parts[parts.length - 1].trim();
+              }
+              if (!cat) cat = '장소';
 
-            addItem({
-              id: doc.id || `sdk-p-${doc.x}-${doc.y}`,
-              place_name: doc.place_name,
-              category_name: cat,
-              address_name: doc.address_name || '',
-              road_address_name: doc.road_address_name || '',
-              x: String(doc.x),
-              y: String(doc.y),
-              phone: doc.phone || '',
-              place_url: doc.place_url || '',
-            });
+              addItem({
+                id: doc.id || `sdk-p-${doc.x}-${doc.y}`,
+                place_name: doc.place_name,
+                category_name: cat,
+                address_name: doc.address_name || '',
+                road_address_name: doc.road_address_name || '',
+                x: String(doc.x),
+                y: String(doc.y),
+                phone: doc.phone || '',
+                place_url: doc.place_url || '',
+              });
+            }
           }
-        }
-        resolve();
-      });
+          resolve();
+        },
+        { size: 15 }
+      );
     } catch {
       resolve();
     }
@@ -185,7 +189,7 @@ async function searchWithKakaoREST(query: string): Promise<KakaoPlaceItem[]> {
  */
 async function searchWithNationalGeocoding(query: string): Promise<KakaoPlaceItem[]> {
   try {
-    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=kr&addressdetails=1&limit=8`;
+    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=kr&addressdetails=1&limit=15`;
     const osmRes = await fetch(osmUrl, {
       headers: {
         'Accept-Language': 'ko,en',
@@ -307,5 +311,5 @@ export async function searchKakaoPlaces(query: string): Promise<KakaoPlaceItem[]
     }
   }
 
-  return results.slice(0, 10);
+  return results.slice(0, 15);
 }
