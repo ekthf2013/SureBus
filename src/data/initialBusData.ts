@@ -44,9 +44,9 @@ export const STATION_COORDS: Record<string, StationCoord> = {
     "address": "경기도 성남시 수정구 금토로80번길 37 인피니티타워 E동 (슈어소프트테크)"
   },
   "성남역": {
-    "lat": 37.3942,
-    "lng": 127.126,
-    "address": "성남역 5번 출구 앞"
+    "lat": 37.394635,
+    "lng": 127.121220,
+    "address": "성남역 5번 출구 앞 (GTX-A/경강선)"
   },
   "이매역": {
     "lat": 37.396,

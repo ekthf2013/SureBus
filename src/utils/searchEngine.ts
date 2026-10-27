@@ -1488,7 +1488,7 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
         const hqArrStr = minutesToTimeString(targetMins - 2);
 
         const suseoCoord = { lat: 37.4874, lng: 127.1018 };
-        const seongnamCoord = { lat: 37.3970, lng: 127.1180 };
+        const seongnamCoord = { lat: 37.394635, lng: 127.121220 };
 
         const expressSteps: RouteStepItem[] = [
           {
@@ -2365,7 +2365,7 @@ export function calculateOptimalRoutes(params: SearchParams, routes: RouteData[]
       const finalArrMins = ktxArrMins + localDestMins;
 
       const suseoCoord = { lat: 37.4874, lng: 127.1018 };
-      const seongnamCoord = { lat: 37.3970, lng: 127.1180 };
+      const seongnamCoord = { lat: 37.394635, lng: 127.121220 };
 
       const outExpressSteps: RouteStepItem[] = [
         {

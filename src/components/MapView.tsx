@@ -16,15 +16,32 @@ interface StationRouteInfo {
   times: string[];
 }
 
+function normalizeStationName(name: string): string {
+  return name.replace(/\s*\(.*?\)/g, '').replace(/역$/, '').trim();
+}
+
+function isStationMatch(target: string, candidate: string): boolean {
+  if (target === candidate) return true;
+  const normTarget = normalizeStationName(target);
+  const normCandidate = normalizeStationName(candidate);
+  if (normTarget === normCandidate) return true;
+
+  // 사옥 별칭 처리
+  if ((normTarget === '사옥' || normTarget === '도착(사옥)') && (normCandidate === '사옥' || normCandidate === '도착(사옥)')) {
+    return true;
+  }
+
+  return false;
+}
+
 function getStationRouteInfo(stationName: string): StationRouteInfo[] {
-  const clean = stationName.replace(/역$/, '').trim();
   const results: StationRouteInfo[] = [];
 
   INITIAL_ROUTES.forEach((route) => {
     const matchingTimes: string[] = [];
     route.inbound_trips.forEach((trip) => {
       Object.entries(trip.times).forEach(([stName, time]) => {
-        if (stName === stationName || stName.replace(/역$/, '').trim() === clean || stName.includes(clean)) {
+        if (isStationMatch(stationName, stName)) {
           matchingTimes.push(time);
         }
       });
