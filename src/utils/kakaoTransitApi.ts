@@ -248,36 +248,40 @@ export async function fetchKakaoTransitCandidates(params: SearchParams): Promise
     const p = r.properties || {};
     const totalDuration = Math.max(10, Math.round((p.totalTime || 3600) / 60));
     const transfers = p.transfers || 0;
-    const fare = p.fare?.min || 1500;
 
-    // 출근 시 도착 시각(targetMins)에 맞추어 출발 시각 역산, 퇴근 시 targetMins에서 출발
-    const startDeptMins = isCommuteIn ? Math.max(0, targetMins - totalDuration) : targetMins;
-    let currentMins = startDeptMins;
+    interface ParsedTransitStep {
+      item: RouteStepItem;
+      startCoord?: { lat: number; lng: number };
+      endCoord?: { lat: number; lng: number };
+      rawType: string;
+    }
 
-    const steps: RouteStepItem[] = [];
-    let stepIdx = 1;
-
+    // 1. 카카오 API 원시 단계 파싱 (좌표 및 정류장 정보 보존)
+    const rawParsed: ParsedTransitStep[] = [];
     (r.steps || []).forEach((s: any) => {
       const sp = s.properties || {};
       const stepType = sp.type; // WALKING, BUS, SUBWAY
       const stepDuration = Math.max(1, Math.round((sp.time || 60) / 60));
-      const deptStr = minutesToTimeString(currentMins);
-      const arrMins = currentMins + stepDuration;
-      const arrStr = minutesToTimeString(arrMins);
+      const pts = s.path?.points || [];
+      const startCoord = pts[0] ? { lat: pts[0][1], lng: pts[0][0] } : undefined;
+      const endCoord = pts.length > 0 ? { lat: pts[pts.length - 1][1], lng: pts[pts.length - 1][0] } : undefined;
 
       if (stepType === 'WALKING') {
         const rawGuidance = sp.guidance ? cleanGuidance(sp.guidance) : '';
-        const walkTitle = rawGuidance || (steps.length === 0 ? `${startName} 출발 ➔ 도보 이동` : '도보 이동');
-
-        steps.push({
-          id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
-          type: 'walk',
-          title: walkTitle,
-          subtitle: `도보 약 ${stepDuration}분 (${sp.distance ? `${sp.distance}m` : ''})`,
-          departureTime: deptStr,
-          arrivalTime: arrStr,
-          durationMinutes: stepDuration,
-          distanceMeters: sp.distance
+        const walkTitle = rawGuidance || '도보 이동';
+        rawParsed.push({
+          rawType: 'WALKING',
+          startCoord,
+          endCoord,
+          item: {
+            id: 'temp',
+            type: 'walk',
+            title: walkTitle,
+            subtitle: `도보 약 ${stepDuration}분 (${sp.distance ? `${sp.distance}m` : ''})`,
+            durationMinutes: stepDuration,
+            distanceMeters: sp.distance,
+            coords: startCoord
+          }
         });
       } else if (stepType === 'BUS') {
         const vehicles = (sp.vehicles || []).map((v: any) => v.name).filter(Boolean);
@@ -299,24 +303,26 @@ export async function fetchKakaoTransitCandidates(params: SearchParams): Promise
         const startStop = cleanGuidance(sp.stops?.[0]?.name || '승차 정류장');
         const endStop = cleanGuidance(sp.stops?.[sp.stops.length - 1]?.name || '하차 정류장');
         const stCount = sp.stops?.length || 1;
-
         const lineTag = busInfo.category === 'express' ? '광역 ' : busInfo.category === 'circulation' ? '경기순환 ' : busInfo.category === 'seat' ? '좌석 ' : '';
 
-        steps.push({
-          id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
-          type: 'public_bus',
-          title: busTitle,
-          subtitle: `${startStop} ➔ ${endStop} (${stepDuration}분 소요, ${stCount}개 정류장)`,
-          departureTime: deptStr,
-          arrivalTime: arrStr,
-          durationMinutes: stepDuration,
-          distanceMeters: sp.distance,
-          fare: busInfo.baseFare,
-          boardingStopName: startStop,
-          dropoffStopName: endStop,
-          busNo: vehicles.join('/'),
-          note: `🚏 탑승 정류소: ${startStop} (운행 노선: ${lineTag}${vehicles.map((v: any) => `${v}번`).join(', ')})`,
-          coords: s.path?.points?.[0] ? { lat: s.path.points[0][1], lng: s.path.points[0][0] } : undefined
+        rawParsed.push({
+          rawType: 'BUS',
+          startCoord,
+          endCoord,
+          item: {
+            id: 'temp',
+            type: 'public_bus',
+            title: busTitle,
+            subtitle: `${startStop} ➔ ${endStop} (${stepDuration}분 소요, ${stCount}개 정류장)`,
+            durationMinutes: stepDuration,
+            distanceMeters: sp.distance,
+            fare: busInfo.baseFare,
+            boardingStopName: startStop,
+            dropoffStopName: endStop,
+            busNo: vehicles.join('/'),
+            note: `🚏 탑승 정류소: ${startStop} (운행 노선: ${lineTag}${vehicles.map((v: any) => `${v}번`).join(', ')})`,
+            coords: startCoord
+          }
         });
       } else if (stepType === 'SUBWAY') {
         const lineName = sp.vehicles?.[0]?.name || '지하철';
@@ -324,31 +330,205 @@ export async function fetchKakaoTransitCandidates(params: SearchParams): Promise
         const endStn = cleanGuidance(sp.stops?.[sp.stops.length - 1]?.name || '도착역');
         const stCount = sp.stops?.length || 1;
 
-        steps.push({
-          id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
-          type: 'subway',
-          title: `${lineName} ${startStn} 탑승 ➔ ${endStn} 이동`,
-          subtitle: `${endStn} 방면 (${stepDuration}분 소요, ${stCount}개 역)`,
-          departureTime: deptStr,
-          arrivalTime: arrStr,
-          durationMinutes: stepDuration,
-          distanceMeters: sp.distance,
-          fare: 1500,
-          boardingStopName: startStn,
-          dropoffStopName: endStn,
-          note: `🚇 ${lineName} 탑승 (${stCount}개 역 이동)`,
-          coords: s.path?.points?.[0] ? { lat: s.path.points[0][1], lng: s.path.points[0][0] } : undefined
+        rawParsed.push({
+          rawType: 'SUBWAY',
+          startCoord,
+          endCoord,
+          item: {
+            id: 'temp',
+            type: 'subway',
+            title: `${lineName} ${startStn} 탑승 ➔ ${endStn} 이동`,
+            subtitle: `${endStn} 방면 (${stepDuration}분 소요, ${stCount}개 역)`,
+            durationMinutes: stepDuration,
+            distanceMeters: sp.distance,
+            fare: 1500,
+            boardingStopName: startStn,
+            dropoffStopName: endStn,
+            note: `🚇 ${lineName} 탑승 (${stCount}개 역 이동)`,
+            coords: startCoord
+          }
         });
       }
-
-      currentMins = arrMins;
     });
 
-    const finalArrMins = currentMins;
-    const walkMinutes = steps.filter(s => s.type === 'walk').reduce((sum, s) => sum + s.durationMinutes, 0);
-    const busMinutes = steps.filter(s => s.type === 'public_bus' || s.type === 'subway').reduce((sum, s) => sum + s.durationMinutes, 0);
+    if (rawParsed.length === 0) return;
 
-    const firstTransit = steps.find(s => s.type === 'public_bus' || s.type === 'subway');
+    // 2. 카카오 API에서 생략된 도보 단계 판정 (First-mile 출발 도보, 환승 대기/이동, Last-mile 도착 도보)
+    const originCoord = { lat: startY, lng: startX };
+    const destCoord = { lat: endY, lng: endX };
+
+    // A. 첫 탑승 정류장까지 도보
+    const firstStep = rawParsed[0];
+    let firstWalkDist = 0;
+    let needFirstWalk = false;
+    if (firstStep.item.type !== 'walk') {
+      const boardCoord = firstStep.startCoord || originCoord;
+      firstWalkDist = getHaversineDistanceMeters(originCoord.lat, originCoord.lng, boardCoord.lat, boardCoord.lng);
+      if (firstWalkDist > 30) {
+        needFirstWalk = true;
+      }
+    } else {
+      if (!firstStep.item.title.includes(startName)) {
+        firstStep.item.title = `${startName} 출발 ➔ ${firstStep.item.title}`;
+      }
+    }
+
+    // B. 대중교통 간 환승 대기 / 승강장 이동 (광역버스 간 환승 등 카카오가 도보 생략한 구간 자동 보완)
+    const interTransfers: Array<{
+      afterIndex: number;
+      dist: number;
+      fromStop: string;
+      toStop: string;
+      coord?: { lat: number; lng: number };
+    }> = [];
+
+    for (let i = 0; i < rawParsed.length - 1; i++) {
+      const curr = rawParsed[i];
+      const next = rawParsed[i + 1];
+      if (curr.item.type !== 'walk' && next.item.type !== 'walk') {
+        const dropPt = curr.endCoord;
+        const boardPt = next.startCoord;
+        const dist = (dropPt && boardPt) ? getHaversineDistanceMeters(dropPt.lat, dropPt.lng, boardPt.lat, boardPt.lng) : 0;
+        interTransfers.push({
+          afterIndex: i,
+          dist,
+          fromStop: curr.item.dropoffStopName || '하차 정류소',
+          toStop: next.item.boardingStopName || '승차 정류소',
+          coord: dropPt || boardPt
+        });
+      }
+    }
+
+    // C. 마지막 하차 정류장에서 최종 목적지(판교 사옥 또는 귀가지)까지 도보
+    const lastStep = rawParsed[rawParsed.length - 1];
+    let lastWalkDist = 0;
+    let needLastWalk = false;
+    if (lastStep.item.type !== 'walk') {
+      const dropCoord = lastStep.endCoord || destCoord;
+      lastWalkDist = getHaversineDistanceMeters(dropCoord.lat, dropCoord.lng, destCoord.lat, destCoord.lng);
+      if (lastWalkDist > 30) {
+        needLastWalk = true;
+      }
+    } else {
+      if (!lastStep.item.title.includes(destName)) {
+        lastStep.item.title = `${lastStep.item.title} ➔ ${destName} 도착`;
+      }
+    }
+
+    // 3. 실제 총 소요시간(totalDuration)과 탑승 시간 간의 차이를 정밀 도보 시간으로 배분
+    const knownTransitMins = rawParsed.filter(s => s.item.type !== 'walk').reduce((sum, s) => sum + s.item.durationMinutes, 0);
+    const knownWalkMins = rawParsed.filter(s => s.item.type === 'walk').reduce((sum, s) => sum + s.item.durationMinutes, 0);
+    const unallocatedMinutes = Math.max(0, totalDuration - (knownTransitMins + knownWalkMins));
+
+    // 보행 기준 속도(67m/분, 시속 약 4km/h) 기반 이론 소요시간 산출
+    const estFirst = needFirstWalk ? Math.max(1, Math.round(firstWalkDist / 67)) : 0;
+    const estLast = needLastWalk ? Math.max(1, Math.round(lastWalkDist / 67)) : 0;
+    const estTransfers = interTransfers.map(t => (t.dist > 30 ? Math.max(2, Math.round(t.dist / 67)) : 3));
+    const sumEst = estFirst + estLast + estTransfers.reduce((a, b) => a + b, 0);
+
+    let allocFirst = 0;
+    let allocLast = 0;
+    const allocTransfers: number[] = [];
+
+    if (unallocatedMinutes > 0 && sumEst > 0) {
+      allocFirst = needFirstWalk ? Math.max(1, Math.round(unallocatedMinutes * (estFirst / sumEst))) : 0;
+      allocLast = needLastWalk ? Math.max(1, Math.round(unallocatedMinutes * (estLast / sumEst))) : 0;
+      interTransfers.forEach((_, idx) => {
+        allocTransfers.push(Math.max(1, Math.round(unallocatedMinutes * (estTransfers[idx] / sumEst))));
+      });
+      const currentAllocSum = allocFirst + allocLast + allocTransfers.reduce((a, b) => a + b, 0);
+      const diff = unallocatedMinutes - currentAllocSum;
+      if (needLastWalk) {
+        allocLast += diff;
+      } else if (needFirstWalk) {
+        allocFirst += diff;
+      } else if (allocTransfers.length > 0) {
+        allocTransfers[0] += diff;
+      }
+    } else {
+      allocFirst = estFirst;
+      allocLast = estLast;
+      interTransfers.forEach((_, idx) => allocTransfers.push(estTransfers[idx]));
+    }
+
+    // 4. 최종 순차 타임라인 구축
+    const fullSteps: RouteStepItem[] = [];
+    let stepIdx = 1;
+
+    if (needFirstWalk) {
+      const firstStopName = firstStep.item.boardingStopName || '승차 정류장';
+      const firstDistText = firstWalkDist >= 1000 ? `${(firstWalkDist / 1000).toFixed(1)}km` : `${Math.round(firstWalkDist)}m`;
+      fullSteps.push({
+        id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
+        type: 'walk',
+        title: `${startName} 출발 ➔ ${firstStopName} 도보 이동`,
+        subtitle: `도보 약 ${allocFirst}분 (${firstDistText})`,
+        durationMinutes: allocFirst,
+        distanceMeters: Math.round(firstWalkDist),
+        coords: originCoord
+      });
+    }
+
+    rawParsed.forEach((parsed, pIdx) => {
+      fullSteps.push({
+        ...parsed.item,
+        id: `kakao-step-${rIdx + 1}-${stepIdx++}`
+      });
+
+      const trans = interTransfers.find(t => t.afterIndex === pIdx);
+      if (trans) {
+        const tIdx = interTransfers.indexOf(trans);
+        const transDuration = allocTransfers[tIdx] || 3;
+        const transDistText = trans.dist >= 1000 ? `${(trans.dist / 1000).toFixed(1)}km` : `${Math.round(trans.dist)}m`;
+        const transTitle = trans.dist > 30
+          ? `${trans.fromStop} ➔ ${trans.toStop} 환승 도보 이동`
+          : `${trans.fromStop} 환승 대기 / 승강장 이동`;
+        const transSub = trans.dist > 30
+          ? `환승 도보 약 ${transDuration}분 (${transDistText})`
+          : `탑승 대기 및 승강장 이동 (약 ${transDuration}분)`;
+
+        fullSteps.push({
+          id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
+          type: 'walk',
+          title: transTitle,
+          subtitle: transSub,
+          durationMinutes: transDuration,
+          distanceMeters: Math.round(trans.dist),
+          coords: trans.coord
+        });
+      }
+    });
+
+    if (needLastWalk) {
+      const lastDropStop = lastStep.item.dropoffStopName || '하차 정류장';
+      const lastDistText = lastWalkDist >= 1000 ? `${(lastWalkDist / 1000).toFixed(1)}km` : `${Math.round(lastWalkDist)}m`;
+      fullSteps.push({
+        id: `kakao-step-${rIdx + 1}-${stepIdx++}`,
+        type: 'walk',
+        title: `${lastDropStop} 하차 ➔ ${destName} 도보 이동`,
+        subtitle: `도보 약 ${allocLast}분 (${lastDistText})`,
+        durationMinutes: allocLast,
+        distanceMeters: Math.round(lastWalkDist),
+        coords: destCoord
+      });
+    }
+
+    // 5. 연속적 타임라인(출발 시각 ~ 도착 시각) 생성
+    const actualTotalDuration = fullSteps.reduce((sum, s) => sum + s.durationMinutes, 0);
+    const startDeptMins = isCommuteIn ? Math.max(0, targetMins - actualTotalDuration) : targetMins;
+    let curMins = startDeptMins;
+
+    fullSteps.forEach(step => {
+      step.departureTime = minutesToTimeString(curMins);
+      curMins += step.durationMinutes;
+      step.arrivalTime = minutesToTimeString(curMins);
+    });
+
+    const finalArrMins = curMins;
+    const walkMinutes = fullSteps.filter(s => s.type === 'walk').reduce((sum, s) => sum + s.durationMinutes, 0);
+    const busMinutes = fullSteps.filter(s => s.type === 'public_bus' || s.type === 'subway').reduce((sum, s) => sum + s.durationMinutes, 0);
+
+    const firstTransit = fullSteps.find(s => s.type === 'public_bus' || s.type === 'subway');
     const mainTransitTitle = firstTransit ? firstTransit.title.replace(' 탑승', '') : '대중교통';
 
     const badges: any[] = [];
@@ -360,20 +540,20 @@ export async function fetchKakaoTransitCandidates(params: SearchParams): Promise
       id: `kakao-transit-candidate-${rIdx + 1}`,
       badges,
       title: `실시간 대중교통: ${mainTransitTitle}`,
-      subtitle: `${startName} ➔ ${destName} (환승 ${transfers}회, 총 ${totalDuration}분)`,
+      subtitle: `${startName} ➔ ${destName} (환승 ${transfers}회, 총 ${actualTotalDuration}분)`,
       departureTime: minutesToTimeString(startDeptMins),
       arrivalTime: minutesToTimeString(finalArrMins),
-      totalDurationMinutes: finalArrMins - startDeptMins,
+      totalDurationMinutes: actualTotalDuration,
       walkMinutes,
       waitMinutes: 3,
       busMinutes,
       fare: 0,
       transferCount: transfers,
-      steps,
+      steps: fullSteps,
       routeColor: rIdx === 0 ? '#2563eb' : '#0284c7',
       routeName: `카카오 대중교통 ${rIdx + 1}`,
       routeCategory: 'public_transit',
-      score: (finalArrMins - startDeptMins) + walkMinutes * 1.1 + transfers * 10
+      score: actualTotalDuration + walkMinutes * 1.1 + transfers * 10
     };
 
     applyUnifiedTransitFare(cand);

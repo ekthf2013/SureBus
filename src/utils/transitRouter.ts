@@ -260,13 +260,54 @@ function parseOdsayPath(
     }
   }
 
-  const transferCount = Math.max(0, (info?.busTransitCount || 0) + (info?.subwayTransitCount || 0) - 1);
-  const firstStepDeptMins = steps[0]?.departureTime ? parseTimeToMinutes(steps[0].departureTime) : startDeptMins;
-  const lastStepArrMins = (steps.length > 0 && steps[steps.length - 1]?.arrivalTime)
-    ? parseTimeToMinutes(steps[steps.length - 1].arrivalTime!)
-    : currentMins;
-  const totalMins = Math.max(5, lastStepArrMins - firstStepDeptMins);
+  // 1. 첫 승차 위치까지 도보 보완 (ODsay가 첫 구간 도보를 생략한 경우 자동 보정)
+  if (steps.length > 0 && steps[0].type !== 'walk') {
+    const firstCoord = steps[0].coords || { lat: startLat, lng: startLng };
+    const distToFirst = getHaversineDistanceMeters(startLat, startLng, firstCoord.lat, firstCoord.lng);
+    if (distToFirst > 30) {
+      const walkMins = Math.max(1, Math.round(distToFirst / 67));
+      const distText = distToFirst >= 1000 ? `${(distToFirst / 1000).toFixed(1)}km` : `${Math.round(distToFirst)}m`;
+      steps.unshift({
+        id: `${baseId}-first-walk`,
+        type: 'walk',
+        title: `${startName} 출발 ➔ ${steps[0].boardingStopName || '승차 정류장'} 도보 이동`,
+        subtitle: `도보 약 ${walkMins}분 (${distText})`,
+        durationMinutes: walkMins,
+        distanceMeters: Math.round(distToFirst),
+        coords: { lat: startLat, lng: startLng }
+      });
+    }
+  }
 
+  // 2. 마지막 하차 위치에서 목적지까지 도보 보완 (ODsay가 마지막 구간 도보를 생략한 경우 자동 보정)
+  if (steps.length > 0 && steps[steps.length - 1].type !== 'walk') {
+    const lastCoord = steps[steps.length - 1].coords || { lat: destLat, lng: destLng };
+    const distToLast = getHaversineDistanceMeters(lastCoord.lat, lastCoord.lng, destLat, destLng);
+    if (distToLast > 30) {
+      const walkMins = Math.max(1, Math.round(distToLast / 67));
+      const distText = distToLast >= 1000 ? `${(distToLast / 1000).toFixed(1)}km` : `${Math.round(distToLast)}m`;
+      steps.push({
+        id: `${baseId}-last-walk`,
+        type: 'walk',
+        title: `${steps[steps.length - 1].dropoffStopName || '하차 정류장'} 하차 ➔ ${destName} 도보 이동`,
+        subtitle: `도보 약 ${walkMins}분 (${distText})`,
+        durationMinutes: walkMins,
+        distanceMeters: Math.round(distToLast),
+        coords: { lat: destLat, lng: destLng }
+      });
+    }
+  }
+
+  // 3. 타임라인 순차 재정렬
+  let curMins = startDeptMins;
+  steps.forEach(step => {
+    step.departureTime = minutesToTimeString(curMins);
+    curMins += step.durationMinutes;
+    step.arrivalTime = minutesToTimeString(curMins);
+  });
+  const totalMins = Math.max(5, curMins - startDeptMins);
+
+  const transferCount = Math.max(0, (info?.busTransitCount || 0) + (info?.subwayTransitCount || 0) - 1);
   const fareDetails = calculateMetropolitanTransitFare(steps, steps[0]?.departureTime);
   const calculatedFare = fareDetails.totalFare > 0 ? fareDetails.totalFare : (info?.payment || 1650);
 
