@@ -29,6 +29,8 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isSelectedRef = useRef(false);
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
 
   // 컴포넌트 마운트 시 카카오 SDK 사전 로딩
   useEffect(() => {
@@ -37,6 +39,11 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
 
   // 검색어 입력 시 카카오 장소 검색 디바운스
   useEffect(() => {
+    if (isSelectedRef.current) {
+      isSelectedRef.current = false;
+      return;
+    }
+
     if (!originName || originName.trim().length < 2) {
       setSearchResults([]);
       setShowDropdown(false);
@@ -68,10 +75,16 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
   const handleSelectKakaoPlace = (place: KakaoPlaceItem) => {
     const lat = parseFloat(place.y);
     const lng = parseFloat(place.x);
-    setOriginName(place.place_name);
+    const address = place.road_address_name || place.address_name || '';
+    const displayName = address ? `${place.place_name} (${address})` : place.place_name;
+
+    isSelectedRef.current = true;
+    setOriginName(displayName);
     setOriginLat(lat);
     setOriginLng(lng);
+    setSelectedAddress(address);
     setShowDropdown(false);
+    // 검색은 즉시 실행하지 않고, 사용자가 하단의 '경로 검색하기' 버튼을 누를 때 실행됩니다.
   };
 
   const handleSelectPreset = (preset: { name: string; lat: number; lng: number }) => {
@@ -250,9 +263,11 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                     type="text"
                     value={originName}
                     onChange={(e) => {
+                      isSelectedRef.current = false;
                       setOriginName(e.target.value);
                       setOriginLat(0);
                       setOriginLng(0);
+                      setSelectedAddress('');
                     }}
                     onFocus={async () => {
                       if (searchResults.length > 0) {
@@ -325,6 +340,19 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
                 </div>
               )}
             </div>
+
+            {/* 장소 선택 완료 안내 뱃지 */}
+            {selectedAddress && (
+              <div className="mt-2 flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-semibold truncate">위치 선택 완료: {originName}</span>
+                </div>
+                <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300 shrink-0 font-bold ml-2">
+                  하단 ‘경로 검색하기’ 클릭
+                </span>
+              </div>
+            )}
 
             {/* Quick Preset Buttons - 통근버스/셔틀 실제 정차 거점 */}
             <div className="mt-2.5">
