@@ -72,21 +72,6 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
     setOriginLat(lat);
     setOriginLng(lng);
     setShowDropdown(false);
-
-    // 즉시 검색 트리거
-    onSearch({
-      originName: place.place_name,
-      originLat: lat,
-      originLng: lng,
-      mode,
-      targetTime,
-      date: new Date().toISOString().split('T')[0],
-      preference,
-      filters: {
-        useCompanyBusOnly,
-        usePublicTransit,
-      },
-    });
   };
 
   const handleSelectPreset = (preset: { name: string; lat: number; lng: number }) => {
@@ -455,7 +440,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
             className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            최적 맞춤 경로 계산하기
+            경로 검색하기
           </button>
         </form>
       </div>
