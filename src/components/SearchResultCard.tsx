@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { RouteCandidate, BadgeType } from '../types/bus';
+import React, { useState, useEffect, useMemo } from 'react';
+import { RouteCandidate, BadgeType, RouteStepItem } from '../types/bus';
 import { addStoredFavorite, removeStoredFavorite, isCandidateFavorite } from '../utils/favoritesStorage';
 import { LiveTransitStepBadge, getSubwayLineColor } from './LiveTransitStepBadge';
-import { Trophy, Zap, Footprints, ChevronDown, ChevronUp, ArrowRight, ExternalLink, MapPin, Train, Bus, Clock, ShieldCheck, CheckCircle2, Star, Sunrise } from 'lucide-react';
+import { BoardingLocationModal } from './BoardingLocationModal';
+import { getCandidateBoardingLocations, getStepBoardingLocation, BoardingLocationInfo } from '../data/shuttleBoardingLocations';
+import { Trophy, Zap, Footprints, ChevronDown, ChevronUp, ArrowRight, ExternalLink, MapPin, Train, Bus, Clock, ShieldCheck, CheckCircle2, Star, Sunrise, Camera } from 'lucide-react';
 
 // 사옥 고정 좌표
 const HQ_LAT = 37.40698104234706;
@@ -39,7 +41,26 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
 }) => {
   const [expanded, setExpanded] = useState<boolean>(true);
   const [isFav, setIsFav] = useState<boolean>(false);
+  const [showBoardingModal, setShowBoardingModal] = useState<boolean>(false);
+  const [activeLocationId, setActiveLocationId] = useState<string | undefined>(undefined);
   const hasOrigin = userLat !== 0 && userLng !== 0;
+
+  // 셔틀 또는 통근버스 탑승 정류장 정보 자동 추출
+  const boardingLocations = useMemo(() => getCandidateBoardingLocations(candidate), [candidate]);
+  const hasShuttleOrCommute = boardingLocations.length > 0;
+
+  const handleOpenBoardingModal = (step?: RouteStepItem) => {
+    if (step) {
+      const stepLoc = getStepBoardingLocation(step, candidate.routeName);
+      if (stepLoc) {
+        setActiveLocationId(stepLoc.id);
+        setShowBoardingModal(true);
+        return;
+      }
+    }
+    setActiveLocationId(undefined);
+    setShowBoardingModal(true);
+  };
 
   useEffect(() => {
     if (userName && candidate.id) {
@@ -154,6 +175,21 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           >
             {candidate.routeName}
           </span>
+          {/* 셔틀/통근 버스가 포함된 경로인 경우 상단 탑승 위치보기 버튼 */}
+          {hasShuttleOrCommute && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenBoardingModal();
+              }}
+              className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/50 font-bold transition-all shadow-sm cursor-pointer"
+              title="셔틀/통근버스 탑승 위치 사진 보기"
+            >
+              <Camera className="w-3.5 h-3.5 text-emerald-400" />
+              <span>탑승 위치보기</span>
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
@@ -209,7 +245,7 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
       </div>
 
       {/* Summary Stat Pill Grid */}
-      <div className="grid grid-cols-4 gap-2 py-2 px-3 rounded-xl bg-slate-950/80 border border-slate-800/80 mb-4 text-center">
+      <div className="grid grid-cols-4 gap-2 py-2 px-3 rounded-xl bg-slate-950/80 border border-slate-800/80 mb-3 text-center">
         <div>
           <p className="text-[10px] text-slate-400">총 소요</p>
           <p className="text-xs font-bold text-white">{candidate.totalDurationMinutes}분</p>
@@ -234,6 +270,47 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           </p>
         </div>
       </div>
+
+      {/* 통근/셔틀버스 탑승 위치보기 강조 배너 (경로 내 셔틀/통근이 포함된 경우) */}
+      {hasShuttleOrCommute && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenBoardingModal();
+          }}
+          className="my-3 p-3 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-teal-950/80 to-slate-900 border-2 border-emerald-500/60 hover:border-emerald-400 flex items-center justify-between gap-3 shadow-xl shadow-emerald-950/50 cursor-pointer group transition-all"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <Camera className="w-5 h-5 text-emerald-300 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black text-white">
+                  📍 {boardingLocations[0]?.routeName || candidate.routeName} 탑승 위치 사진 안내
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 font-black">
+                  {boardingLocations.map(b => b.stationName).join(' · ')}
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-200/90 truncate mt-0.5 font-semibold">
+                어디서 타야 하는지 실제 현장 사진과 승차 위치를 바로 확인하세요
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenBoardingModal();
+            }}
+            className="shrink-0 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/40 cursor-pointer active:scale-95"
+          >
+            <Camera className="w-4 h-4 text-slate-950" />
+            <span>위치보기</span>
+          </button>
+        </div>
+      )}
 
       {/* Detailed Timeline Steps (웹 내부에서 바로 보여주는 실시간 길찾기 타임라인) */}
       {expanded && (
@@ -282,13 +359,29 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
                   {/* 버스 승차 및 하차 정류장 상세 안내 */}
                   {(step.type === 'public_bus' || step.type === 'commute_bus' || step.type === 'shuttle') && (
                     <div className="mt-2 p-2 rounded-lg bg-slate-900/90 border border-cyan-500/30 text-[11px] space-y-1">
-                      <div className="flex items-center gap-1.5 text-slate-200">
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] border border-emerald-500/30 shrink-0">
-                          승차 정류장
-                        </span>
-                        <span className="font-bold text-white truncate">
-                          {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
-                        </span>
+                      <div className="flex items-center justify-between gap-1.5 text-slate-200">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] border border-emerald-500/30 shrink-0">
+                            승차 정류장
+                          </span>
+                          <span className="font-bold text-white truncate">
+                            {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
+                          </span>
+                        </div>
+                        {(step.type === 'shuttle' || step.type === 'commute_bus') && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenBoardingModal(step);
+                            }}
+                            className="shrink-0 px-2 py-0.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/45 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                            title="탑승 위치 사진 및 상세 안내 보기"
+                          >
+                            <Camera className="w-3 h-3 text-indigo-400" />
+                            <span>위치보기</span>
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-200">
                         <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[9px] border border-rose-500/30 shrink-0">
@@ -342,6 +435,25 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
+          {/* 셔틀/통근 탑승 위치 사진 보기 버튼 */}
+          {hasShuttleOrCommute && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenBoardingModal();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-300 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-emerald-500/50 transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+              title="셔틀/통근버스 탑승 위치 사진 및 상세 안내 보기"
+            >
+              <Camera className="w-3.5 h-3.5 text-emerald-400" />
+              <span>위치보기</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/40">
+                {boardingLocations.length}곳
+              </span>
+            </button>
+          )}
+
           {/* 지도에 표시 버튼 (모달 열지 않고 상단 지도로 스크롤 & 노선 그리기) */}
           <button
             type="button"
@@ -378,6 +490,18 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           </a>
         </div>
       </div>
+
+      {/* 셔틀/통근버스 탑승 위치 사진 팝업 모달 */}
+      {showBoardingModal && (
+        <BoardingLocationModal
+          locations={boardingLocations}
+          initialLocationId={activeLocationId}
+          onClose={() => {
+            setShowBoardingModal(false);
+            setActiveLocationId(undefined);
+          }}
+        />
+      )}
     </div>
   );
 };

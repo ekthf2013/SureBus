@@ -1,7 +1,9 @@
-import React from 'react';
-import { RouteCandidate } from '../types/bus';
+import React, { useState, useMemo } from 'react';
+import { RouteCandidate, RouteStepItem } from '../types/bus';
 import { LiveTransitStepBadge, getSubwayLineColor } from './LiveTransitStepBadge';
-import { X, Clock, MapPin, Footprints, Bus, AlertTriangle, ShieldCheck, ChevronRight, Train, Sunrise } from 'lucide-react';
+import { BoardingLocationModal } from './BoardingLocationModal';
+import { getCandidateBoardingLocations, getStepBoardingLocation } from '../data/shuttleBoardingLocations';
+import { X, Clock, MapPin, Footprints, Bus, AlertTriangle, ShieldCheck, ChevronRight, Train, Sunrise, Camera } from 'lucide-react';
 
 interface RouteDetailModalProps {
   candidate: RouteCandidate | null;
@@ -9,7 +11,29 @@ interface RouteDetailModalProps {
 }
 
 export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, onClose }) => {
+  const [showBoardingModal, setShowBoardingModal] = useState<boolean>(false);
+  const [activeLocationId, setActiveLocationId] = useState<string | undefined>(undefined);
+
+  const boardingLocations = useMemo(() => {
+    return candidate ? getCandidateBoardingLocations(candidate) : [];
+  }, [candidate]);
+
+  const hasShuttleOrCommute = boardingLocations.length > 0;
+
   if (!candidate) return null;
+
+  const handleOpenBoardingModal = (step?: RouteStepItem) => {
+    if (step) {
+      const stepLoc = getStepBoardingLocation(step, candidate.routeName);
+      if (stepLoc) {
+        setActiveLocationId(stepLoc.id);
+        setShowBoardingModal(true);
+        return;
+      }
+    }
+    setActiveLocationId(undefined);
+    setShowBoardingModal(true);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
@@ -24,20 +48,35 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
 
         {/* Modal Header */}
         <div className="mb-6">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span 
-              className="text-xs font-bold px-2.5 py-1 rounded-md text-white"
-              style={{ backgroundColor: candidate.routeColor }}
-            >
-              {candidate.routeName}
-            </span>
-            {candidate.badges?.includes('early_bird') && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-sm">
-                <Sunrise className="w-3.5 h-3.5 text-orange-400" />
-                🌅 조조할인 적용
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span 
+                className="text-xs font-bold px-2.5 py-1 rounded-md text-white"
+                style={{ backgroundColor: candidate.routeColor }}
+              >
+                {candidate.routeName}
               </span>
+              {candidate.badges?.includes('early_bird') && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-sm">
+                  <Sunrise className="w-3.5 h-3.5 text-orange-400" />
+                  🌅 조조할인 적용
+                </span>
+              )}
+              <span className="text-xs text-slate-400 font-medium">상세 이동 타임라인</span>
+            </div>
+
+            {/* 셔틀/통근 버스가 포함된 경로인 경우 상단 탑승 위치보기 버튼 */}
+            {hasShuttleOrCommute && (
+              <button
+                type="button"
+                onClick={() => handleOpenBoardingModal()}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 font-bold transition-all shadow-sm cursor-pointer"
+                title="셔틀/통근버스 탑승 위치 사진 보기"
+              >
+                <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                <span>탑승 위치보기 ({boardingLocations.length}곳)</span>
+              </button>
             )}
-            <span className="text-xs text-slate-400 font-medium">상세 이동 타임라인</span>
           </div>
           <h2 className="text-xl font-bold text-white mb-1">{candidate.title}</h2>
           <p className="text-xs text-slate-300">{candidate.subtitle}</p>
@@ -73,6 +112,41 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
             </p>
           </div>
         </div>
+
+        {/* 통근/셔틀버스 탑승 위치보기 강조 배너 */}
+        {hasShuttleOrCommute && (
+          <div 
+            onClick={() => handleOpenBoardingModal()}
+            className="mb-6 p-3 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-teal-950/80 to-slate-900 border-2 border-emerald-500/60 hover:border-emerald-400 flex items-center justify-between gap-3 shadow-xl shadow-emerald-950/50 cursor-pointer group transition-all"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <Camera className="w-5 h-5 text-emerald-300 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-black text-white">
+                    📍 {boardingLocations[0]?.routeName || candidate.routeName} 탑승 위치 사진 안내
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 font-black">
+                    {boardingLocations.map(b => b.stationName).join(' · ')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-200/90 truncate mt-0.5 font-semibold">
+                  어디서 타야 하는지 실제 현장 사진과 승차 위치를 바로 확인하세요
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenBoardingModal()}
+              className="shrink-0 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/40 cursor-pointer active:scale-95"
+            >
+              <Camera className="w-4 h-4 text-slate-950" />
+              <span>위치보기</span>
+            </button>
+          </div>
+        )}
 
         {/* Detailed Timeline Steps */}
         <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
@@ -124,13 +198,26 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
                 {/* 버스 승차 및 하차 정류장 상세 안내 */}
                 {(step.type === 'public_bus' || step.type === 'commute_bus' || step.type === 'shuttle') && (
                   <div className="mt-2.5 p-2.5 rounded-lg bg-slate-950/80 border border-cyan-500/30 text-xs space-y-1.5">
-                    <div className="flex items-center gap-2 text-slate-200">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] border border-emerald-500/30 shrink-0">
-                        승차 정류장
-                      </span>
-                      <span className="font-bold text-white truncate">
-                        {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 text-slate-200">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] border border-emerald-500/30 shrink-0">
+                          승차 정류장
+                        </span>
+                        <span className="font-bold text-white truncate">
+                          {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
+                        </span>
+                      </div>
+                      {(step.type === 'shuttle' || step.type === 'commute_bus') && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenBoardingModal(step)}
+                          className="shrink-0 px-2 py-0.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/45 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                          title="탑승 위치 사진 및 상세 안내 보기"
+                        >
+                          <Camera className="w-3 h-3 text-indigo-400" />
+                          <span>위치보기</span>
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-slate-200">
                       <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[10px] border border-rose-500/30 shrink-0">
@@ -197,6 +284,18 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
           </button>
         </div>
       </div>
+
+      {/* 셔틀/통근버스 탑승 위치 사진 팝업 모달 */}
+      {showBoardingModal && (
+        <BoardingLocationModal
+          locations={boardingLocations}
+          initialLocationId={activeLocationId}
+          onClose={() => {
+            setShowBoardingModal(false);
+            setActiveLocationId(undefined);
+          }}
+        />
+      )}
     </div>
   );
 };
