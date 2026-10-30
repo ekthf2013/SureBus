@@ -71,7 +71,7 @@ export const STATION_COORDS: Record<string, StationCoord> = {
   "야탑역": {
     "lat": 37.412071,
     "lng": 127.129054,
-    "address": "야탑역 수인분당선 1번출구 앞"
+    "address": "야탑역 우리은행 앞 (분당아미고타워 1층 / 3번 출구 인근)"
   },
   "판교2밸리": {
     "lat": 37.408225,
