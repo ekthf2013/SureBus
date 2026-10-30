@@ -175,21 +175,6 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           >
             {candidate.routeName}
           </span>
-          {/* 셔틀/통근 버스가 포함된 경로인 경우 상단 탑승 위치보기 버튼 */}
-          {hasShuttleOrCommute && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenBoardingModal();
-              }}
-              className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/50 font-bold transition-all shadow-sm cursor-pointer"
-              title="셔틀/통근버스 탑승 위치 사진 보기"
-            >
-              <Camera className="w-3.5 h-3.5 text-emerald-400" />
-              <span>탑승 위치보기</span>
-            </button>
-          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
@@ -359,29 +344,13 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
                   {/* 버스 승차 및 하차 정류장 상세 안내 */}
                   {(step.type === 'public_bus' || step.type === 'commute_bus' || step.type === 'shuttle') && (
                     <div className="mt-2 p-2 rounded-lg bg-slate-900/90 border border-cyan-500/30 text-[11px] space-y-1">
-                      <div className="flex items-center justify-between gap-1.5 text-slate-200">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] border border-emerald-500/30 shrink-0">
-                            승차 정류장
-                          </span>
-                          <span className="font-bold text-white truncate">
-                            {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
-                          </span>
-                        </div>
-                        {(step.type === 'shuttle' || step.type === 'commute_bus') && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenBoardingModal(step);
-                            }}
-                            className="shrink-0 px-2 py-0.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/45 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
-                            title="탑승 위치 사진 및 상세 안내 보기"
-                          >
-                            <Camera className="w-3 h-3 text-indigo-400" />
-                            <span>위치보기</span>
-                          </button>
-                        )}
+                      <div className="flex items-center gap-1.5 text-slate-200">
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] border border-emerald-500/30 shrink-0">
+                          승차 정류장
+                        </span>
+                        <span className="font-bold text-white truncate">
+                          {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-200">
                         <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[9px] border border-rose-500/30 shrink-0">

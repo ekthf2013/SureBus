@@ -198,26 +198,13 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
                 {/* 버스 승차 및 하차 정류장 상세 안내 */}
                 {(step.type === 'public_bus' || step.type === 'commute_bus' || step.type === 'shuttle') && (
                   <div className="mt-2.5 p-2.5 rounded-lg bg-slate-950/80 border border-cyan-500/30 text-xs space-y-1.5">
-                    <div className="flex items-center justify-between gap-2 text-slate-200">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] border border-emerald-500/30 shrink-0">
-                          승차 정류장
-                        </span>
-                        <span className="font-bold text-white truncate">
-                          {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
-                        </span>
-                      </div>
-                      {(step.type === 'shuttle' || step.type === 'commute_bus') && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenBoardingModal(step)}
-                          className="shrink-0 px-2 py-0.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/45 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
-                          title="탑승 위치 사진 및 상세 안내 보기"
-                        >
-                          <Camera className="w-3 h-3 text-indigo-400" />
-                          <span>위치보기</span>
-                        </button>
-                      )}
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] border border-emerald-500/30 shrink-0">
+                        승차 정류장
+                      </span>
+                      <span className="font-bold text-white truncate">
+                        {step.boardingStopName || step.detailLocation || step.subtitle?.split('➔')[0]?.replace(/(승차|탑승|이동)/g, '').trim() || '승차 정류소'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-200">
                       <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[10px] border border-rose-500/30 shrink-0">

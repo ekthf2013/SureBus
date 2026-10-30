@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { BoardingLocationInfo } from '../data/shuttleBoardingLocations';
-import { X, MapPin, Bus, ExternalLink, ZoomIn, ZoomOut, AlertCircle, Sparkles, Navigation, Info, Camera, CheckCircle2 } from 'lucide-react';
+import { X, MapPin, Bus, ExternalLink, AlertCircle, Sparkles, Navigation, Info, Camera, CheckCircle2 } from 'lucide-react';
 
 interface BoardingLocationModalProps {
   locations: BoardingLocationInfo[];
@@ -21,7 +22,24 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
   });
 
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
-  const [isZoomed, setIsZoomed] = useState<boolean>(false);
+
+  // 모달 오픈 시 배경 스크롤 고정 및 ESC 키 이벤트 리스너 등록 (안정성 강화)
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   if (!locations || locations.length === 0) return null;
 
@@ -32,19 +50,20 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
     setImageError(prev => ({ ...prev, [currentLoc.id]: true }));
   };
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-sm transition-opacity"
       onClick={onClose}
     >
       <div 
-        className="glass-panel w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl border border-indigo-500/30 shadow-2xl p-5 sm:p-7 relative bg-slate-900/95"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-indigo-500/30 shadow-2xl p-5 sm:p-6 relative bg-slate-900/98 text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Close Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer border border-slate-700/60"
+          className="absolute top-4 right-4 p-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700/60 z-10"
           title="닫기"
         >
           <X className="w-5 h-5" />
@@ -82,11 +101,8 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
               <button
                 key={loc.id}
                 type="button"
-                onClick={() => {
-                  setSelectedId(loc.id);
-                  setIsZoomed(false);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                onClick={() => setSelectedId(loc.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer ${
                   selectedId === loc.id
                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/30'
                     : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
@@ -99,40 +115,19 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
           </div>
         )}
 
-        {/* Main Photo Area */}
+        {/* Main Photo Area (레이아웃 흔들림 방지 컨테이너 & 오버레이 제거) */}
         <div className="mb-5">
-          <div className="relative rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-inner group">
+          <div className="relative rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 min-h-[200px] flex items-center justify-center">
             {hasImage ? (
-              <div className="relative">
-                <img
-                  src={currentLoc.imageUrl}
-                  alt={`${currentLoc.stationName} 탑승 위치`}
-                  onError={handleImageError}
-                  className={`w-full object-cover transition-all duration-300 ${
-                    isZoomed ? 'max-h-[70vh] object-contain cursor-zoom-out' : 'max-h-72 sm:max-h-80 cursor-zoom-in'
-                  }`}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                />
-                
-                {/* Photo Overlay Badge */}
-                <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-lg">
-                  <Camera className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>실제 현장 탑승 위치 사진</span>
-                </div>
-
-                {/* Zoom toggle button */}
-                <button
-                  type="button"
-                  onClick={() => setIsZoomed(!isZoomed)}
-                  className="absolute bottom-3 right-3 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md hover:bg-slate-800 text-white border border-slate-700 transition-all"
-                  title={isZoomed ? '축소' : '확대해서 보기'}
-                >
-                  {isZoomed ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
-                </button>
-              </div>
+              <img
+                src={currentLoc.imageUrl}
+                alt={`${currentLoc.stationName} 탑승 위치`}
+                onError={handleImageError}
+                className="w-full h-auto max-h-[55vh] object-contain rounded-xl block select-none"
+              />
             ) : (
               /* Photo Placeholder when photo is pending / not yet attached */
-              <div className="py-12 px-6 text-center space-y-4 bg-gradient-to-b from-slate-900 to-slate-950">
+              <div className="py-12 px-6 text-center space-y-4 bg-gradient-to-b from-slate-900 to-slate-950 w-full">
                 <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto shadow-lg shadow-indigo-500/10">
                   <Camera className="w-8 h-8 animate-pulse text-indigo-400" />
                 </div>
@@ -148,14 +143,6 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
                     실제 현장 사진이 등록되면 이 위치에 선명한 사진이 표시됩니다.<br />
                     아래 상세 위치 설명과 카카오맵 로드뷰를 먼저 참고해 주세요.
                   </p>
-                </div>
-
-                {/* Helpful image upload hint for developer / user */}
-                <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 max-w-sm mx-auto text-left flex items-start gap-2">
-                  <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                  <span>
-                    사진 파일 준비 시 <code className="text-indigo-300 font-mono">public{currentLoc.imageUrl}</code> 경로에 사진을 넣거나 전달해 주시면 즉시 반영됩니다.
-                  </span>
                 </div>
               </div>
             )}
@@ -220,7 +207,7 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700 cursor-pointer"
           >
             닫기
           </button>
@@ -228,5 +215,6 @@ export const BoardingLocationModal: React.FC<BoardingLocationModalProps> = ({
       </div>
     </div>
   );
-};
 
+  return createPortal(modalContent, document.body);
+};
