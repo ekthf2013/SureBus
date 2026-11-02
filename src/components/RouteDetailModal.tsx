@@ -18,7 +18,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
     return candidate ? getCandidateBoardingLocations(candidate) : [];
   }, [candidate]);
 
-  const hasShuttleOrCommute = boardingLocations.length > 0;
+  const hasShuttleOrCommute = boardingLocations.length > 0 && (candidate?.steps.some(s => s.type === 'shuttle' || s.type === 'commute_bus') || candidate?.routeCategory === 'company_only');
 
   if (!candidate) return null;
 
@@ -65,19 +65,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({ candidate, o
               <span className="text-xs text-slate-400 font-medium">상세 이동 타임라인</span>
             </div>
 
-            {/* 셔틀/통근 버스가 포함된 경로인 경우 상단 탑승 위치보기 버튼 */}
-            {hasShuttleOrCommute && (
-              <button
-                type="button"
-                onClick={() => handleOpenBoardingModal()}
-                className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 font-bold transition-all shadow-sm cursor-pointer"
-                title="셔틀/통근버스 탑승 위치 사진 보기"
-              >
-                <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                <span>탑승 위치보기 ({boardingLocations.length}곳)</span>
-              </button>
-            )}
-          </div>
+            </div>
           <h2 className="text-xl font-bold text-white mb-1">{candidate.title}</h2>
           <p className="text-xs text-slate-300">{candidate.subtitle}</p>
         </div>

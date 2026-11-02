@@ -306,75 +306,103 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
     kakaoMapUrl: "https://map.kakao.com/link/to/사당역통근탑승장,37.476743,126.982431"
   },
 
-  // ── 강남 노선 (통근버스) ──
+  // ── 강남 노선 (통근버스: 클레무브 1호차, 텔레칩스 2호차, 교촌 3호차) ──
   "논현역": {
     id: "nonhyeon",
-    stationName: "논현역",
+    stationName: "논현역 (텔레칩스)",
     aliasNames: ["논현역", "논현역 4번출구", "논현역 6번출구", "7호선 논현역", "신분당선 논현역", "논현역 써브웨이"],
-    routeName: "강남노선 통근버스",
+    routeName: "강남노선 (텔레칩스 2호차)",
     busType: "commute",
     exactLocation: "논현역 4번 출구 바로 앞 도로변 (써브웨이 앞)",
     address: "서울 서초구 강남대로 521 (논현역 4번 출구 앞 써브웨이 앞)",
     landmarks: "신분당선·7호선 논현역 4번 출구 나오자마자 바로 앞 써브웨이 매장 앞 도로변 볼라드 부근 (빨간 화살표 위치)",
-    tip: "논현역 4번 출구 바로 앞 인도 코너에서 통근버스가 정차합니다. 강남노선 첫 출발 지점이므로 5분 전 미리 도착해 주세요.",
+    tip: "강남노선 2호차(텔레칩스 08:00 출발) 첫 출발 지점입니다. 4번 출구 바로 앞 써브웨이 앞에서 대기해 주세요.",
     imageUrl: "/images/boarding/nonhyeon.jpg",
     coords: { lat: 37.510872, lng: 127.021060 },
     kakaoMapUrl: "https://map.kakao.com/link/to/논현역통근탑승장,37.510872,127.021060"
   },
   "신논현역": {
-    id: "sinnonhyeon",
-    stationName: "신논현역",
-    aliasNames: ["신논현역", "신논현역 7번출구", "신논현역 중앙차선"],
-    routeName: "강남노선 통근버스",
+    id: "sinnonhyeon-telechips",
+    stationName: "신논현역 (텔레칩스)",
+    aliasNames: ["신논현역", "신논현역 7번출구", "신논현역 중앙차선", "신논현역 텔레칩스"],
+    routeName: "강남노선 (텔레칩스 2호차)",
     busType: "commute",
-    exactLocation: "신논현역 신분당선 7번 출구 버스중앙차선 정류장",
-    address: "서울 서초구 강남대로 479 (신논현역 7번 출구 앞)",
-    landmarks: "교보타워 앞 중앙차선 버스승강장",
-    tip: "중앙차선 양재·판교 방면 승강장에서 탑승합니다.",
+    exactLocation: "신논현역 7번 출구 신분당선 강남역 방면 버스중앙차선 정류장",
+    address: "서울 서초구 강남대로 479 (신논현역 7번 출구 앞 중앙차선)",
+    landmarks: "신논현역 7번 출구 나와 강남대로 강남역 방면 버스중앙차선 쉘터 (빨간 화살표 위치)",
+    tip: "광역버스 등 여러 버스로 혼잡하므로 잘못 타거나 못 타는 일이 없도록 꼭 주의해서 탑승 바랍니다. (텔레칩스 2호차 08:02)",
     imageUrl: "/images/boarding/sinnonhyeon.jpg",
     coords: { lat: 37.503312, lng: 127.024768 },
     kakaoMapUrl: "https://map.kakao.com/link/to/신논현역통근탑승장,37.503312,127.024768"
   },
   "강남역": {
-    id: "gangnam",
-    stationName: "강남역",
-    aliasNames: ["강남역", "강남역 5번출구", "신분당선 강남역"],
-    routeName: "강남노선 통근버스",
+    id: "gangnam-telechips",
+    stationName: "강남역 (텔레칩스)",
+    aliasNames: ["강남역", "강남역 5,6번출구", "강남역 중앙차선", "강남역 텔레칩스", "신분당선 강남역"],
+    routeName: "강남노선 (텔레칩스 2호차)",
     busType: "commute",
-    exactLocation: "강남역 신분당선 5번 출구 앞",
-    address: "서울 서초구 강남대로 369 (강남역 5번 출구)",
-    landmarks: "5번 출구 나와서 우측 도로변 승강장 부근",
-    tip: "강남역 사거리 남측 서초 방면 승강장입니다.",
-    imageUrl: "/images/boarding/gangnam.jpg",
+    exactLocation: "강남역 5,6번 출구 사이 신분당선 양재역 방면 버스중앙차선 정류장",
+    address: "서울 서초구 강남대로 (강남역 5·6번 출구 사이 중앙차선 버스 쉘터)",
+    landmarks: "신분당선 강남역 5번·6번 출구 사이 양재역 방면 버스중앙차선 승강장 쉘터 (빨간 화살표 위치)",
+    tip: "광역버스 등 여러 버스로 혼잡하므로 주의해서 탑승 바랍니다. 텔레칩스 2호차(08:04)는 중앙차선 승강장에서 정차합니다.",
+    imageUrl: "/images/boarding/gangnam-telechips.jpg",
     coords: { lat: 37.495283, lng: 127.028599 },
     kakaoMapUrl: "https://map.kakao.com/link/to/강남역통근탑승장,37.495283,127.028599"
   },
+  "강남역 (교촌)": {
+    id: "gangnam-kyochon",
+    stationName: "강남역 (교촌 3호차)",
+    aliasNames: ["강남역 (교촌)", "강남역 교촌", "강남역 5번출구", "강남역 3호차"],
+    routeName: "강남노선 (교촌 3호차)",
+    busType: "commute",
+    exactLocation: "강남역 5번 출구 앞 도로변 버스 승강장 (가변차로)",
+    address: "서울 서초구 강남대로 369 (강남역 5번 출구 앞)",
+    landmarks: "신분당선 강남역 5번 출구 나와서 우측 도로변 승강장 부근 (빨간 화살표 위치)",
+    tip: "⚠️ 교촌 3호차(08:20)는 중앙차선이 아닌 5번 출구 바로 앞 도로변(가변차로)에서 탑승합니다.",
+    imageUrl: "/images/boarding/gangnam-kyochon.jpg",
+    coords: { lat: 37.495283, lng: 127.028599 },
+    kakaoMapUrl: "https://map.kakao.com/link/to/강남역교촌탑승장,37.495283,127.028599"
+  },
   "양재역": {
-    id: "yangjae",
-    stationName: "양재역",
-    aliasNames: ["양재역", "양재역 2번출구", "양재역 클레무브", "양재역2번출구 (클레무브)", "양재역 1번출구", "3호선 양재역", "신분당선 양재역", "HL클레무브"],
-    routeName: "강남노선 통근버스",
+    id: "yangjae-klemove",
+    stationName: "양재역 (클레무브 1호차)",
+    aliasNames: ["양재역", "양재역 2번출구", "양재역 클레무브", "양재역2번출구 (클레무브)", "HL클레무브"],
+    routeName: "강남노선 (클레무브 1호차)",
     busType: "commute",
     exactLocation: "양재역 2번 출구 북측 강남대로37길 코너 (HL클레무브 앞 도로변)",
     address: "서울 서초구 강남대로 233 (양재역 2번 출구 북측 강남대로37길 코너)",
     landmarks: "양재역 2번 출구 나와 강남대로 북쪽 방면 도보 직진, 강남대로37길 코너 볼라드 앞 / HL클레무브 앞 (빨간 화살표 위치)",
-    tip: "양재역 2번 출구 나와 강남대로37길 코너 볼라드 앞 도로변에서 탑승합니다. 경부고속도로 진입 전 마지막 승차 정류장입니다.",
-    imageUrl: "/images/boarding/yangjae.jpg",
+    tip: "클레무브 1호차(07:40) 전용 승차 위치입니다. 2번 출구 나와 강남대로37길 코너 볼라드 앞에서 탑승합니다.",
+    imageUrl: "/images/boarding/yangjae-klemove.jpg",
     coords: { lat: 37.484731, lng: 127.033332 },
     kakaoMapUrl: "https://map.kakao.com/link/to/양재역통근탑승장,37.484731,127.033332"
+  },
+  "양재역 (텔레칩스·교촌)": {
+    id: "yangjae-telechips",
+    stationName: "양재역 (텔레칩스·교촌)",
+    aliasNames: ["양재역 (텔레칩스·교촌)", "양재역 1번출구", "양재역 수협은행", "양재역 텔레칩스", "양재역 교촌"],
+    routeName: "강남노선 (텔레칩스 2호차 / 교촌 3호차)",
+    busType: "commute",
+    exactLocation: "양재역 1번 출구 전방 100m 수협은행 앞 버스정류장",
+    address: "서울 서초구 남부순환로 2568 (수협은행 서초지점 앞 도로변)",
+    landmarks: "양재역 1번 출구 나와 남부순환로 서초IC 방면 직진 100m, 수협은행 정문 앞 도로변 (빨간 화살표 위치)",
+    tip: "텔레칩스 2호차(08:12) 및 교촌 3호차(08:25)는 1번 출구 전방 100m 수협은행 앞에서 탑승합니다. 혼잡하므로 5분 전 대기해 주세요.",
+    imageUrl: "/images/boarding/yangjae-telechips.jpg",
+    coords: { lat: 37.484731, lng: 127.033332 },
+    kakaoMapUrl: "https://map.kakao.com/link/to/양재역수협은행탑승장,37.484731,127.033332"
   },
 
   // ── 안양 노선 (통근버스) ──
   "광명역": {
     id: "gwangmyeong",
     stationName: "광명역",
-    aliasNames: ["광명역", "KTX 광명역", "광명역 1번출구"],
+    aliasNames: ["광명역", "KTX 광명역", "광명역 아브뉴프랑", "광명역 1번출구"],
     routeName: "안양노선 통근버스",
     busType: "commute",
-    exactLocation: "KTX 광명역 1번 출구 앞 버스정류장",
-    address: "경기 광명시 광명역로 21 (KTX 광명역 동편 1번 출구)",
-    landmarks: "동편 버스 환승 승강장 1번 홈",
-    tip: "KTX 이용 후 환승하기에 최적화되어 있습니다.",
+    exactLocation: "광명역 아브뉴프랑 앞 버스정류장 (06:45)",
+    address: "경기 광명시 양지로 16 (아브뉴프랑 광명점 앞 도로변)",
+    landmarks: "KTX 광명역 서편 아브뉴프랑 앞 시내버스 승강장 쉘터 (빨간 화살표 위치)",
+    tip: "안양노선 첫 출발 정류장(06:45)입니다. 정시 출발하므로 5분 전 미리 대기해 주세요.",
     imageUrl: "/images/boarding/gwangmyeong.jpg",
     coords: { lat: 37.417689, lng: 126.884549 },
     kakaoMapUrl: "https://map.kakao.com/link/to/광명역통근탑승장,37.417689,126.884549"
@@ -382,13 +410,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "안양역": {
     id: "anyang",
     stationName: "안양역",
-    aliasNames: ["안양역", "안양역 1번출구", "1호선 안양역"],
+    aliasNames: ["안양역", "안양역 시계상자", "1호선 안양역", "안양역 1번출구"],
     routeName: "안양노선 통근버스",
     busType: "commute",
-    exactLocation: "안양역 1호선 1번 출구 앞",
-    address: "경기 안양시 만안구 만안로 232 (안양역 1번 출구)",
-    landmarks: "엔터식스 쇼핑몰 정문 앞 버스 승강장",
-    tip: "역 앞 광장 도로변 승강장에서 대기해 주세요.",
+    exactLocation: "안양역 시계상자 앞 도로변 (06:55)",
+    address: "경기 안양시 만안구 만안로 221 (안양역 시계상자 앞)",
+    landmarks: "안양역 광장 도로변 시계상자 매장 앞 (빨간 화살표 위치)",
+    tip: "안양역 시계상자 앞 도로변에서 06:55에 정차합니다. 3분 전 미리 도착해 대기해 주세요.",
     imageUrl: "/images/boarding/anyang.jpg",
     coords: { lat: 37.401259, lng: 126.922635 },
     kakaoMapUrl: "https://map.kakao.com/link/to/안양역통근탑승장,37.401259,126.922635"
@@ -396,13 +424,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "범계역": {
     id: "beomgye",
     stationName: "범계역",
-    aliasNames: ["범계역", "범계역 롯데백화점", "평촌 롯데백화점"],
+    aliasNames: ["범계역", "범계역 롯데백화점", "평촌 롯데백화점", "범계역 시외버스"],
     routeName: "안양노선 통근버스",
     busType: "commute",
-    exactLocation: "범계역 롯데백화점 평촌점 앞 시외버스정류장",
+    exactLocation: "범계역 롯데백화점 앞 시외버스정류장 (07:13)",
     address: "경기 안양시 동안구 시민대로 180 (롯데백화점 평촌점 앞)",
-    landmarks: "백화점 정문 앞 시외·공항버스 정류소 부근",
-    tip: "시외버스 정류소 부근에서 대기해 주세요.",
+    landmarks: "롯데백화점 평촌점 정문 앞 시외버스 승강장 쉘터 (빨간 화살표 위치)",
+    tip: "롯데백화점 정문 앞 시외버스 승강장에서 07:13에 출발합니다.",
     imageUrl: "/images/boarding/beomgye.jpg",
     coords: { lat: 37.390222, lng: 126.950466 },
     kakaoMapUrl: "https://map.kakao.com/link/to/범계역통근탑승장,37.390222,126.950466"
@@ -410,13 +438,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "인덕원역": {
     id: "indeogwon",
     stationName: "인덕원역",
-    aliasNames: ["인덕원역", "인덕원역 3번출구", "4호선 인덕원역"],
+    aliasNames: ["인덕원역", "인덕원역 3번출구", "인덕원 3번출구", "4호선 인덕원역"],
     routeName: "안양노선 통근버스",
     busType: "commute",
-    exactLocation: "인덕원역 4호선 3번 출구 버스정류장",
-    address: "경기 안양시 동안구 관악대로 483 (인덕원역 3번 출구)",
-    landmarks: "3번 출구 나와 직진 30m 판교 방면 시내버스 정류장",
-    tip: "판교 방면 도로변 승강장에서 승차합니다.",
+    exactLocation: "인덕원역 3번출구 버스정류장 (07:20)",
+    address: "경기 안양시 동안구 관악대로 483 (인덕원역 3번 출구 앞)",
+    landmarks: "인덕원역 4호선 3번 출구 나와 직진 30m 시내버스 승강장 쉘터 (빨간 화살표 위치)",
+    tip: "판교 방면 도로변 3번 출구 버스 쉘터에서 07:20에 탑승합니다.",
     imageUrl: "/images/boarding/indeogwon.jpg",
     coords: { lat: 37.401092, lng: 126.977141 },
     kakaoMapUrl: "https://map.kakao.com/link/to/인덕원역통근탑승장,37.401092,126.977141"
@@ -426,13 +454,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "오산 교촌 본사": {
     id: "osan-kyochon",
     stationName: "오산 교촌 본사",
-    aliasNames: ["오산 교촌 본사", "교촌본사", "원동 교촌"],
+    aliasNames: ["오산 교촌 본사", "교촌본사", "원동 교촌", "오산 교촌 에프앤비"],
     routeName: "오산노선 통근버스",
     busType: "commute",
-    exactLocation: "오산 교촌에프앤비 본사 앞",
-    address: "경기 오산시 원동 391-4 (교촌에프앤비 본사 앞)",
-    landmarks: "교촌에프앤비 사옥 정문 앞 도로변",
-    tip: "오산 노선 출발 지점입니다.",
+    exactLocation: "오산 교촌 에프앤비 본사 앞 (07:20)",
+    address: "경기 오산시 원동 391-4 (교촌에프앤비 본사 입구)",
+    landmarks: "교촌 F&B 본사 입구 도로변 (빨간 화살표 위치)",
+    tip: "오산노선 첫 출발 지점(07:20)입니다. 5분 전 미리 대기해 주세요.",
     imageUrl: "/images/boarding/osan-kyochon.jpg",
     coords: { lat: 37.138555, lng: 127.073592 },
     kakaoMapUrl: "https://map.kakao.com/link/to/오산교촌본사통근탑승장,37.138555,127.073592"
@@ -440,13 +468,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "사계절 꽃농원": {
     id: "osan-flower",
     stationName: "사계절 꽃농원",
-    aliasNames: ["사계절 꽃농원", "사계절꽃농원"],
+    aliasNames: ["사계절 꽃농원", "사계절꽃농원", "사계절 꽃농원 앞"],
     routeName: "오산노선 통근버스",
     busType: "commute",
-    exactLocation: "사계절꽃농원 앞 버스 승강장",
-    address: "경기 오산시 오산동 193-2",
-    landmarks: "사계절꽃농원 입구 도로변",
-    tip: "도로변 정류장 표지 부근에서 대기해 주세요.",
+    exactLocation: "사계절 꽃농원 앞 버스정류장 (07:23)",
+    address: "경기 오산시 오산동 193-2 (사계절 꽃농원 앞 도로변)",
+    landmarks: "사계절 꽃농원 입구 도로변 (빨간 화살표 위치)",
+    tip: "도로변 07:23 정차 지점입니다. 손을 들어 승차 의사를 표시해 주세요.",
     imageUrl: "/images/boarding/osan-flower.jpg",
     coords: { lat: 37.148711, lng: 127.082811 },
     kakaoMapUrl: "https://map.kakao.com/link/to/사계절꽃농원통근탑승장,37.148711,127.082811"
@@ -454,13 +482,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "오산시청": {
     id: "osan-cityhall",
     stationName: "오산시청",
-    aliasNames: ["오산시청", "오산시청 정문"],
+    aliasNames: ["오산시청", "오산시청 정문", "오산시청 정문 앞"],
     routeName: "오산노선 통근버스",
     busType: "commute",
-    exactLocation: "오산시청 정문 앞 버스 승강장",
+    exactLocation: "오산시청 정문 앞 버스 승강장 (07:26)",
     address: "경기 오산시 성호대로 141 (오산시청 정문 앞)",
-    landmarks: "오산시청 정문 앞 시내버스 정류소 부근",
-    tip: "시청 정문 앞 버스 승강장에서 탑승합니다.",
+    landmarks: "오산시청 정문 출입구 앞 시내버스 승강장 부근 (빨간 화살표 위치)",
+    tip: "오산시청 정문 앞 승강장에서 07:26 탑승합니다.",
     imageUrl: "/images/boarding/osan-cityhall.jpg",
     coords: { lat: 37.149877, lng: 127.077524 },
     kakaoMapUrl: "https://map.kakao.com/link/to/오산시청통근탑승장,37.149877,127.077524"
@@ -468,27 +496,27 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "오산대역 후문": {
     id: "osandae",
     stationName: "오산대역 후문",
-    aliasNames: ["오산대역 후문", "오산대역 2번출구", "1호선 오산대역"],
+    aliasNames: ["오산대역 후문", "오산대역 2번출구", "오산대역 후문 버스정류장", "24322"],
     routeName: "오산노선 통근버스",
     busType: "commute",
-    exactLocation: "오산대역 1호선 2번 출구 버스정류장",
-    address: "경기 오산시 수청동 (오산대역 2번 출구 후문 앞)",
-    landmarks: "2번 출구 앞 버스 베이 승강장",
-    tip: "오산대역 2번 출구 후문 방면입니다.",
+    exactLocation: "오산대역 후문 버스정류장 (24322) (07:35)",
+    address: "경기 오산시 수청동 609-1 (오산대역 2번 출구 후문 앞)",
+    landmarks: "오산대역 2번 출구 후문 앞 시내버스 쉘터 [정류장 번호: 24322] (빨간 화살표 위치)",
+    tip: "정류장 번호 24322 쉘터에서 07:35 출발합니다.",
     imageUrl: "/images/boarding/osandae.jpg",
     coords: { lat: 37.169394, lng: 127.062682 },
     kakaoMapUrl: "https://map.kakao.com/link/to/오산대역통근탑승장,37.169394,127.062682"
   },
   "UN군초전기념관": {
     id: "un-memorial",
-    stationName: "UN군초전기념관",
-    aliasNames: ["UN군초전기념관", "유엔군초전기념관"],
+    stationName: "UN군초전기념관 (UN참전기념관)",
+    aliasNames: ["UN군초전기념관", "유엔군초전기념관", "UN참전기념관", "24406"],
     routeName: "오산노선 통근버스",
     busType: "commute",
-    exactLocation: "유엔군초전기념관 앞 버스정류장",
+    exactLocation: "UN참전기념관(24406) 앞 버스정류장 (07:40)",
     address: "경기 오산시 경기대로 742 (기념관 정문 앞)",
-    landmarks: "기념관 주차장 진입로 인근 시내버스 쉘터",
-    tip: "수원·판교 방면 도로변 승강장입니다.",
+    landmarks: "UN참전기념관 앞 시내버스 쉘터 [정류장 번호: 24406] (빨간 화살표 위치)",
+    tip: "고속도로 진입 전 마지막 승차 정류장(07:40)입니다.",
     imageUrl: "/images/boarding/un-memorial.jpg",
     coords: { lat: 37.184495, lng: 127.049299 },
     kakaoMapUrl: "https://map.kakao.com/link/to/UN군초전기념관통근탑승장,37.184495,127.049299"
@@ -498,13 +526,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "금호어울림": {
     id: "dongtan-kumho",
     stationName: "금호어울림",
-    aliasNames: ["금호어울림", "금호어울림·계룡리슈빌", "금호어울림레이크"],
+    aliasNames: ["금호어울림", "금호어울림·계룡리슈빌", "금호어울림, 계룡리슈빌", "55523"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "금호어울림·계룡리슈빌 버스정류장",
-    address: "경기 화성시 동탄순환대로20길 124",
-    landmarks: "금호어울림레이크 아파트 정문 앞 버스 승강장",
-    tip: "동탄노선 기점입니다. 5분 전 대기 바랍니다.",
+    exactLocation: "금호어울림, 계룡리슈빌 버스정류장 (55523) (07:20)",
+    address: "경기 화성시 동탄순환대로20길 124 (정류장 번호: 55523)",
+    landmarks: "금호어울림레이크 및 계룡리슈빌 단지 앞 도로변 버스 쉘터 (빨간 화살표 위치)",
+    tip: "동탄노선 첫 출발 지점(07:20)입니다. 5분 전 미리 대기해 주세요.",
     imageUrl: "/images/boarding/dongtan-kumho.jpg",
     coords: { lat: 37.182703, lng: 127.124714 },
     kakaoMapUrl: "https://map.kakao.com/link/to/금호어울림통근탑승장,37.182703,127.124714"
@@ -512,27 +540,27 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "한신더휴": {
     id: "dongtan-hanshin",
     stationName: "한신더휴",
-    aliasNames: ["한신더휴", "동탄 한신더휴"],
+    aliasNames: ["한신더휴", "동탄 한신더휴", "55489"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "한신더휴 버스정류장",
-    address: "경기 화성시 동탄순환대로20길 70",
-    landmarks: "한신더휴 아파트 단지 앞 버스 쉘터",
-    tip: "도로변 버스 쉘터에서 승차합니다.",
+    exactLocation: "한신더휴 버스정류장 (55489) (07:27)",
+    address: "경기 화성시 동탄순환대로20길 70 (정류장 번호: 55489)",
+    landmarks: "한신더휴 아파트 단지 앞 도로변 버스 쉘터 (빨간 화살표 위치)",
+    tip: "정류장 번호 55489 쉘터에서 07:27 탑승합니다.",
     imageUrl: "/images/boarding/dongtan-hanshin.jpg",
     coords: { lat: 37.186575, lng: 127.125650 },
     kakaoMapUrl: "https://map.kakao.com/link/to/한신더휴통근탑승장,37.186575,127.125650"
   },
   "신안2차,반도4차": {
     id: "dongtan-sinan",
-    stationName: "신안2차,반도4차",
-    aliasNames: ["신안2차,반도4차", "신안2차·반도4차", "신안인스빌"],
+    stationName: "신안2차, 반도4차",
+    aliasNames: ["신안2차,반도4차", "신안2차·반도4차", "신안2차, 반도4차", "77102"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "신안2차·반도4차 버스정류장",
-    address: "경기 화성시 동탄청계로 303-13",
-    landmarks: "카림애비뉴 상가 및 아파트 사거리 버스 승강장",
-    tip: "동탄 순환 정류소에서 탑승합니다.",
+    exactLocation: "신안2차, 반도4차 버스정류장 (77102) (07:31)",
+    address: "경기 화성시 동탄청계로 303-13 (정류장 번호: 77102)",
+    landmarks: "카림애비뉴 및 신안2차·반도4차 아파트 사거리 앞 버스 쉘터 (빨간 화살표 위치)",
+    tip: "정류장 번호 77102 쉘터에서 07:31 탑승합니다.",
     imageUrl: "/images/boarding/dongtan-sinan.jpg",
     coords: { lat: 37.199904, lng: 127.116830 },
     kakaoMapUrl: "https://map.kakao.com/link/to/신안2차반도4차통근탑승장,37.199904,127.116830"
@@ -540,13 +568,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "이주택지": {
     id: "dongtan-ijutaekji",
     stationName: "이주택지",
-    aliasNames: ["이주택지", "이주택지·상록·경남아파트"],
+    aliasNames: ["이주택지", "이주택지·상록·경남아파트", "이주택지, 상록, 경남아파트", "77103"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "이주택지·상록·경남아파트 버스정류장",
-    address: "경기 화성시 영천동 723",
-    landmarks: "상록아파트 단지 앞 버스 승강장",
-    tip: "도로변 버스 쉘터에서 대기해 주세요.",
+    exactLocation: "이주택지, 상록, 경남아파트 버스정류장 (77103) (07:34)",
+    address: "경기 화성시 영천동 723 (정류장 번호: 77103)",
+    landmarks: "상록·경남아파트 앞 도로변 버스 쉘터 (빨간 화살표 위치)",
+    tip: "정류장 번호 77103 쉘터에서 07:34 탑승합니다.",
     imageUrl: "/images/boarding/dongtan-ijutaekji.jpg",
     coords: { lat: 37.206661, lng: 127.123837 },
     kakaoMapUrl: "https://map.kakao.com/link/to/이주택지통근탑승장,37.206661,127.123837"
@@ -554,13 +582,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "대방디엠시티": {
     id: "dongtan-daebang",
     stationName: "대방디엠시티",
-    aliasNames: ["대방디엠시티", "대방디엠시티·센트럴상록"],
+    aliasNames: ["대방디엠시티", "대방디엠시티·센트럴상록", "대방디엠시티, 센트럴 상록", "55308"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "대방디엠시티·센트럴상록 버스정류장",
-    address: "경기 화성시 동탄대로 636-14",
-    landmarks: "대방디엠시티 주상복합 앞 버스정류장",
-    tip: "출근 시에만 정차하며, 퇴근 시에는 미정차하므로 유의하세요.",
+    exactLocation: "대방디엠시티, 센트럴 상록 (55308) (07:36)",
+    address: "경기 화성시 동탄대로 636-14 (정류장 번호: 55308)",
+    landmarks: "대방디엠시티 센트럴상록 상가 앞 도로변 버스 쉘터 (빨간 화살표 위치)",
+    tip: "07:36 출발하며, ⚠️ 퇴근 시에는 정차하지 않으므로 유의하세요.",
     imageUrl: "/images/boarding/dongtan-daebang.jpg",
     coords: { lat: 37.210272, lng: 127.099442 },
     kakaoMapUrl: "https://map.kakao.com/link/to/대방디엠시티통근탑승장,37.210272,127.099442"
@@ -568,13 +596,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "한미약품": {
     id: "dongtan-hanmi",
     stationName: "한미약품",
-    aliasNames: ["한미약품", "한미약품·푸르지오", "한미약품 연구센터"],
+    aliasNames: ["한미약품", "한미약품·푸르지오", "한미약품, 푸르지오", "한미약품 연구센터", "55315"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "한미약품·푸르지오 버스정류장",
-    address: "경기 화성시 동탄기흥로 550",
-    landmarks: "한미약품 연구센터 및 푸르지오 아파트 앞",
-    tip: "동탄 테크노밸리 주요 정차역입니다.",
+    exactLocation: "한미약품, 푸르지오 버스정류장 (55315) (07:39)",
+    address: "경기 화성시 동탄기흥로 550 (정류장 번호: 55315)",
+    landmarks: "한미약품 연구센터 및 푸르지오 단지 앞 버스 쉘터 (빨간 화살표 위치)",
+    tip: "정류장 번호 55315 쉘터에서 07:39 탑승합니다.",
     imageUrl: "/images/boarding/dongtan-hanmi.jpg",
     coords: { lat: 37.209629, lng: 127.094633 },
     kakaoMapUrl: "https://map.kakao.com/link/to/한미약품통근탑승장,37.209629,127.094633"
@@ -582,13 +610,13 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   "예당고사거리": {
     id: "dongtan-yedang",
     stationName: "예당고사거리",
-    aliasNames: ["예당고사거리", "예당고"],
+    aliasNames: ["예당고사거리", "예당고", "55311"],
     routeName: "동탄노선 통근버스",
     busType: "commute",
-    exactLocation: "예당고사거리 버스정류장",
-    address: "경기 화성시 석우동 60",
-    landmarks: "예당고등학교 사거리 판교 방면 도로변",
-    tip: "기흥동탄IC 고속도로 진입 전 마지막 승차 정류장입니다.",
+    exactLocation: "예당고사거리 버스정류장 (55311) (07:42)",
+    address: "경기 화성시 석우동 60 (정류장 번호: 55311)",
+    landmarks: "예당고등학교 사거리 판교 방면 도로변 버스 쉘터 (빨간 화살표 위치)",
+    tip: "기흥동탄IC 고속도로 진입 전 마지막 승차 정류장(07:42)입니다.",
     imageUrl: "/images/boarding/dongtan-yedang.jpg",
     coords: { lat: 37.206951, lng: 127.078460 },
     kakaoMapUrl: "https://map.kakao.com/link/to/예당고사거리통근탑승장,37.206951,127.078460"
@@ -612,28 +640,51 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
 };
 
 /**
- * 정류장 명칭 및 노선 명칭으로 탑승 위치 정보 검색
+ * 정류장 명칭 및 노선/운영사 컨텍스트로 탑승 위치 정보 검색
+ * (회사별/호차별 탑승 위치 정밀 분기 지원: 클레무브, 텔레칩스, 교촌 등)
  */
-export function findBoardingLocation(stopName: string, routeName?: string): BoardingLocationInfo | null {
+export function findBoardingLocation(
+  stopName: string, 
+  routeName?: string, 
+  contextText?: string
+): BoardingLocationInfo | null {
   if (!stopName && !routeName) return null;
 
-  const raw = `${stopName || ''} ${routeName || ''}`.trim();
-  // 특수문자 및 불필요한 단어 정리
+  const raw = `${stopName || ''} ${routeName || ''} ${contextText || ''}`.trim();
   const clean = (stopName || '').replace(/[\(\)\[\]→➔]/g, ' ').trim();
 
-  // 1. 완전 일치 검색
+  // ── 1. 강남노선 회사별(운영사별) 탑승 위치 정밀 분기 ──
+  if (clean.includes('강남역')) {
+    // 교촌 3호차 (08:20): 강남역 5번 출구 앞 도로변 (가변차로)
+    if (raw.includes('교촌') || raw.includes('3호차') || raw.includes('08:20')) {
+      return SHUTTLE_BOARDING_LOCATIONS['강남역 (교촌)'];
+    }
+    // 텔레칩스 2호차 (08:04): 강남역 5,6번 출구 사이 중앙차선
+    return SHUTTLE_BOARDING_LOCATIONS['강남역'];
+  }
+
+  if (clean.includes('양재역')) {
+    // 텔레칩스 2호차 (08:12) 또는 교촌 3호차 (08:25): 1번 출구 전방 100m 수협은행 앞
+    if (raw.includes('텔레칩스') || raw.includes('2호차') || raw.includes('교촌') || raw.includes('3호차') || raw.includes('08:12') || raw.includes('08:25') || raw.includes('수협은행')) {
+      return SHUTTLE_BOARDING_LOCATIONS['양재역 (텔레칩스·교촌)'];
+    }
+    // 클레무브 1호차 (07:40) 또는 기본: 2번 출구 북측 HL클레무브 앞 코너
+    return SHUTTLE_BOARDING_LOCATIONS['양재역'];
+  }
+
+  // ── 2. 완전 일치 검색 ──
   if (SHUTTLE_BOARDING_LOCATIONS[clean]) {
     return SHUTTLE_BOARDING_LOCATIONS[clean];
   }
 
-  // 2. 키워드 및 alias 검색
+  // ── 3. 키워드 및 alias 검색 ──
   for (const info of Object.values(SHUTTLE_BOARDING_LOCATIONS)) {
     if (info.aliasNames.some(alias => clean.includes(alias) || alias.includes(clean) || raw.includes(alias))) {
       return info;
     }
   }
 
-  // 3. 주요 키워드 기반 매칭 (예: '판교역 1번출구 북문' -> '판교역')
+  // ── 4. 주요 키워드 기반 매칭 ──
   const majorKeys = [
     '판교역', '성남역', '이매역', '이매촌한신', '야탑역', '삼평교', '판교2밸리',
     '군자역', '건대역', '잠실역', '석촌역', '송파역', '가락시장역', '문정역', '장지역', '복정역', '모란역',
@@ -650,19 +701,19 @@ export function findBoardingLocation(stopName: string, routeName?: string): Boar
     }
   }
 
-  // 4. 노선명 기반 fallback 매칭
+  // ── 5. 노선명 기반 fallback 매칭 ──
   if (routeName) {
     if (routeName.includes('판교셔틀')) return SHUTTLE_BOARDING_LOCATIONS['판교역'];
     if (routeName.includes('야탑셔틀')) return SHUTTLE_BOARDING_LOCATIONS['야탑역'];
     if (routeName.includes('잠실')) return SHUTTLE_BOARDING_LOCATIONS['군자역'] || SHUTTLE_BOARDING_LOCATIONS['잠실역'];
     if (routeName.includes('신도림')) return SHUTTLE_BOARDING_LOCATIONS['신도림역'];
-    if (routeName.includes('강남')) return SHUTTLE_BOARDING_LOCATIONS['강남역'] || SHUTTLE_BOARDING_LOCATIONS['양재역'];
+    if (routeName.includes('강남')) return SHUTTLE_BOARDING_LOCATIONS['양재역'] || SHUTTLE_BOARDING_LOCATIONS['강남역'];
     if (routeName.includes('안양')) return SHUTTLE_BOARDING_LOCATIONS['안양역'] || SHUTTLE_BOARDING_LOCATIONS['인덕원역'];
     if (routeName.includes('오산')) return SHUTTLE_BOARDING_LOCATIONS['오산시청'] || SHUTTLE_BOARDING_LOCATIONS['오산 교촌 본사'];
     if (routeName.includes('동탄')) return SHUTTLE_BOARDING_LOCATIONS['금호어울림'] || SHUTTLE_BOARDING_LOCATIONS['한미약품'];
   }
 
-  // 5. STATION_COORDS에 등록되어 있는 경우 즉석 fallback 생성
+  // ── 6. STATION_COORDS에 등록되어 있는 경우 즉석 fallback 생성 ──
   const coord = STATION_COORDS[clean];
   if (coord) {
     return {
@@ -696,7 +747,6 @@ export function getStepBoardingLocation(step: RouteStepItem, routeName?: string)
   let rawStopName = step.boardingStopName || step.detailLocation || '';
 
   if (!rawStopName && step.subtitle) {
-    // 화살표(→, ➔) 및 괄호 앞부분 추출
     const beforeArrow = step.subtitle.split(/[➔→]/)[0] || '';
     rawStopName = beforeArrow.split('(')[0].replace(/(승차|탑승|이동|통근버스 정류소|셔틀)/g, '').trim();
   }
@@ -706,10 +756,13 @@ export function getStepBoardingLocation(step: RouteStepItem, routeName?: string)
     rawStopName = beforeArrow.split('(')[0].replace(/(승차|탑승|이동|통근버스 정류소|셔틀)/g, '').trim();
   }
 
-  const found = findBoardingLocation(rawStopName, routeName || step.title);
+  // 운영사 컨텍스트 (클레무브, 텔레칩스, 교촌 등 호차 및 시간 정보)
+  const contextText = `${step.note || ''} ${step.title || ''} ${step.departureTime || ''} ${routeName || ''}`;
+
+  const found = findBoardingLocation(rawStopName, routeName || step.title, contextText);
   if (found) return found;
 
-  // step.type이 셔틀 또는 통근인데 못 찾은 경우 노선명/스텝 타이틀로 강력 Fallback
+  // step.type이 셔틀 또는 통근인데 못 찾은 경우 노선명/스텝 타이틀로 Fallback
   const isShuttle = step.type === 'shuttle';
   const fallbackKey = isShuttle
     ? ((step.title + (routeName || '')).includes('야탑') ? '야탑역' : '판교역')
@@ -719,46 +772,35 @@ export function getStepBoardingLocation(step: RouteStepItem, routeName?: string)
 }
 
 /**
- * 경로(RouteCandidate)에 셔틀이나 통근버스가 포함되어 있는지 검사하고
- * 포함된 모든 탑승지 정보를 배열로 반환
+ * 경로(RouteCandidate)에 셔틀이나 통근버스가 실제로 탑승되는지 검사하고
+ * 포함된 모든 탑승지 정보를 반환 (통근/셔틀 탈 때만 반환)
  */
 export function getCandidateBoardingLocations(candidate: RouteCandidate): BoardingLocationInfo[] {
   const result: BoardingLocationInfo[] = [];
   const seenIds = new Set<string>();
 
-  // 1. steps에서 직접 추출
-  for (const step of candidate.steps) {
-    if (step.type === 'shuttle' || step.type === 'commute_bus') {
-      const info = getStepBoardingLocation(step, candidate.routeName);
-      if (info && !seenIds.has(info.id)) {
-        seenIds.add(info.id);
-        result.push(info);
-      }
+  // 1. steps에서 통근버스/셔틀버스 탑승 단계가 실제로 존재하는지 검사
+  const shuttleOrCommuteSteps = candidate.steps.filter(
+    step => step.type === 'shuttle' || step.type === 'commute_bus'
+  );
+
+  for (const step of shuttleOrCommuteSteps) {
+    const info = getStepBoardingLocation(step, candidate.routeName);
+    if (info && !seenIds.has(info.id)) {
+      seenIds.add(info.id);
+      result.push(info);
     }
   }
 
-  // 2. routeCategory가 사내 셔틀/통근이거나 routeName에 셔틀/통근 키워드가 있는 경우 보완
-  const isCompanyRoute = 
-    candidate.routeCategory === 'company_only' || 
-    candidate.routeCategory === 'transit_hybrid' ||
-    candidate.routeName.includes('셔틀') ||
-    candidate.routeName.includes('통근') ||
-    candidate.title.includes('셔틀') ||
-    candidate.title.includes('통근');
-
-  if (result.length === 0 && isCompanyRoute) {
-    // candidate.subtitle 및 title에서 정류장 키워드 검색
+  // 2. 회사 직통 노선이지만 steps에 step.type 매핑이 아직 덜 된 특수 직통 케이스에 한해서만 보완
+  if (result.length === 0 && candidate.routeCategory === 'company_only') {
     const combined = `${candidate.title} ${candidate.subtitle} ${candidate.routeName}`;
     const fallbackInfo = findBoardingLocation(combined, candidate.routeName);
     if (fallbackInfo && !seenIds.has(fallbackInfo.id)) {
       seenIds.add(fallbackInfo.id);
       result.push(fallbackInfo);
-    } else {
-      // 기본 판교역 셔틀 탑승지라도 제공
-      result.push(SHUTTLE_BOARDING_LOCATIONS['판교역']);
     }
   }
 
   return result;
 }
-
