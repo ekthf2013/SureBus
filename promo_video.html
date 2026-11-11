@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SureBus Real Hybrid Transit Promo Video</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #070c18;
+      color: #f8fafc;
+      overflow: hidden;
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+    }
+
+    /* Ambient Glow Background */
+    #canvas-particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .ambient-glow {
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      filter: blur(160px);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.28;
+      transition: all 1.8s ease;
+    }
+    .glow-1 {
+      top: -180px;
+      left: -180px;
+      background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 70%);
+    }
+    .glow-2 {
+      bottom: -220px;
+      right: -220px;
+      background: radial-gradient(circle, #06b6d4 0%, #0369a1 70%);
+    }
+    .glow-3 {
+      top: 35%;
+      left: 45%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+      opacity: 0.18;
+    }
+
+    /* Video Frame Container */
+    #stage {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Scene Base (Exhibition Quality - No Overlap / Zero Ghosting) */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      padding: 50px 80px;
+      text-align: center;
+    }
+
+    .scene.active {
+      display: flex;
+      opacity: 1;
+      animation: sceneFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      z-index: 20;
+    }
+
+    @keyframes sceneFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.97) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Glass Panels */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Common Typography */
+    .gradient-text {
+      background: linear-gradient(135deg, #ffffff 15%, #e2e8f0 55%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .neon-cyan {
+      color: #38bdf8;
+      text-shadow: 0 0 20px rgba(56, 189, 248, 0.45);
+    }
+
+    .neon-emerald {
+      color: #34d399;
+      text-shadow: 0 0 20px rgba(52, 211, 153, 0.45);
+    }
+
+    /* Scene 1: Opening */
+    .s1-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 24px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: #38bdf8;
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 34px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
+    }
+
+    .s1-title {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1.32;
+      margin-bottom: 50px;
+      letter-spacing: -1.5px;
+    }
+
+    .s1-pill-container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .s1-pill {
+      padding: 16px 32px;
+      border-radius: 20px;
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 21px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Scene 2: Solution & Branding */
+    .brand-logo-badge {
+      padding: 12px 26px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(56, 189, 248, 0.25);
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+    .brand-logo-badge img {
+      height: 36px;
+      display: block;
+    }
+
+    .s2-title-wrap {
+      margin-bottom: 22px;
+    }
+    .s2-title {
+      font-size: 54px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin-bottom: 10px;
+    }
+    .s2-subtitle {
+      font-size: 22px;
+      color: #94a3b8;
+      font-weight: 400;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    /* Real UI Screenshot Frame (HD Clear & Exhibition Sharpness) */
+    .real-ui-frame {
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1.5px solid rgba(56, 189, 248, 0.55);
+      box-shadow: 0 35px 85px rgba(0, 0, 0, 0.85), 0 0 50px rgba(56, 189, 248, 0.3);
+      background: #0f172a;
+      position: relative;
+    }
+
+    .real-ui-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: high-quality;
+      filter: contrast(102%) saturate(103%);
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    /* Scene 3: Core Features (5 Stages) */
+    .feature-scene {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+      padding: 45px 80px;
+    }
+
+    .feature-step-indicator {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .step-pill {
+      padding: 6px 18px;
+      border-radius: 9999px;
+      background: rgba(30, 41, 59, 0.85);
+      font-size: 14px;
+      font-weight: 700;
+      color: #64748b;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.4s ease;
+    }
+    .step-pill.current {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+
+    .feature-header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .feature-badge-num {
+      display: inline-block;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #38bdf8;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .feature-title {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+    .feature-desc {
+      font-size: 19px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    /* Scene 4: Outro */
+    .s4-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 360px);
+      gap: 28px;
+      margin-top: 40px;
+      margin-bottom: 45px;
+    }
+    .s4-card {
+      padding: 36px 28px;
+      text-align: left;
+      border-radius: 24px;
+    }
+    .s4-card-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .icon-blue { background: rgba(56, 189, 248, 0.18); color: #38bdf8; }
+    .icon-emerald { background: rgba(52, 211, 153, 0.18); color: #34d399; }
+    .icon-purple { background: rgba(167, 139, 250, 0.18); color: #c084fc; }
+
+    .s4-card-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .s4-card-desc {
+      font-size: 16px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .cta-btn {
+      padding: 20px 48px;
+      font-size: 24px;
+      font-weight: 800;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 60%, #4f46e5 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 15px 40px rgba(37, 99, 235, 0.4), 0 0 50px rgba(56, 189, 248, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      letter-spacing: -0.5px;
+    }
+
+    /* Timeline Indicator Footer */
+    #progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
+      width: 0%;
+      z-index: 99;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Particle Canvas (Sand/Sprite Tech Dots) -->
+  <canvas id="canvas-particles"></canvas>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <div id="stage">
+    <!-- Persistent Top-Left Brand Pill with Mascot -->
+    <div style="position: absolute; top: 32px; left: 44px; z-index: 50; display: flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1.2px solid rgba(56, 189, 248, 0.35); border-radius: 9999px; padding: 5px 16px 5px 7px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);">
+      <div style="width: 30px; height: 30px; border-radius: 8px; background: #ffffff; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        <img src="/images/mascot/surebus_driver_mascot_speech.png" alt="슈어버스 로고" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.15); display: block;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 13.5px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">슈어버스</span>
+        <span style="font-size: 11px; font-weight: 700; color: #38bdf8;">SureBus</span>
+      </div>
+    </div>
+    <!-- ================= SCENE 1: OPENING ================= -->
+    <div id="scene-1" class="scene active">
+      <div class="s1-badge">
+        <span>🚨</span>
+        <span>사옥 출퇴근 실시간 고민 솔루션</span>
+      </div>
+      <h1 class="s1-title gradient-text">
+        매일 아침 출근길,<br>
+        왜 이렇게 복잡하고 환승은 지칠까요?
+      </h1>
+      <div class="s1-pill-container">
+        <div class="s1-pill">
+          <span>⏱️</span>
+          <span>사내 셔틀·통근 시간표 확인</span>
+        </div>
+        <div class="s1-pill">
+          <span>🚇</span>
+          <span>대중교통 실시간 환승 연계</span>
+        </div>
+        <div class="s1-pill">
+          <span>🧭</span>
+          <span>최적의 출퇴근 경로 계산</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 2: SOLUTION & BRANDING (COEX HYBRID REAL CAPTURE) ================= -->
+    <div id="scene-2" class="scene">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 24px; max-width: 1140px; width: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.6) 100%); border: 1.5px solid rgba(56, 189, 248, 0.45); border-radius: 24px; padding: 18px 32px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);">
+        <!-- Official Driver Mascot Emblem (Same as Brochure) -->
+        <div style="width: 120px; height: 120px; border-radius: 26px; background: #ffffff; border: 2px solid rgba(56, 189, 248, 0.7); box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <img src="/images/mascot/surebus_driver_mascot_speech.png" alt="슈어버스 공식 마스코트" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.12); display: block;">
+        </div>
+
+        <div style="text-align: left; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <div style="background: #ffffff; padding: 5px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center;">
+              <img src="/suresoft_logo.png" alt="SURESOFT" style="height: 18px; display: block;">
+            </div>
+            <span style="font-size: 13px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.4); padding: 3px 14px; border-radius: 9999px; letter-spacing: 0.5px;">
+              OFFICIAL COMMUTE GUIDE
+            </span>
+          </div>
+          <h1 class="gradient-text" style="font-size: 42px; font-weight: 900; letter-spacing: -1.2px; line-height: 1.25; margin-bottom: 6px;">
+            사옥 출퇴근도 스마트하게, <span class="neon-cyan">슈어버스</span>
+          </h1>
+          <p style="font-size: 17px; color: #cbd5e1; font-weight: 500; line-height: 1.45; margin: 0;">
+            "회사 셔틀/통근 버스와 수도권 대중교통(지하철·버스)을 실시간으로 조합해 집 앞에서 사옥 책상까지 가장 빠르고 편리한 최적의 경로를 한 번에 안내합니다."
+          </p>
+        </div>
+      </div>
+
+      <!-- Real App Screen: Coex -> Subway -> Shuttle -> HQ (Ultra HD 16:9 Overview) -->
+      <div class="real-ui-frame" style="width: 1140px; height: 530px; background: #070d18;">
+        <img src="/promo_assets/real_scene2_viewport.png" alt="SureBus 실제 대중교통+셔틀 연계 화면" style="object-fit: contain; width: 100%; height: 100%;">
+      </div>
+    </div>
+
+    <!-- ================= SCENE 3-1: FEATURE 01 - COEX HYBRID TRANSIT ================= -->
+    <div id="scene-3-1" class="scene feature-scene">
+      <div class="feature-step-indicator">
+        <span class="step-pill current">01 연계 경로 추천</span>
+        <span class="step-pill">02 맞춤 시간대 탐색</span>
+        <span class="step-pill">03 현장 사진 안내</span>
+        <span class="step-pill">04 전체 노선도</span>
+        <span class="step-pill">05 시간표 & 즐겨찾기</span>
+      </div>
+      <div class="feature-header">
+        <span class="feature-badge-num">FEATURE 01</span>
+        <h2 class="feature-title gradient-text">대중교통 + 사내 셔틀 원스톱 연계 추천</h2>
+        <p class="feature-desc">지하철·버스로 거점역까지 이동 후 사내 무료 셔틀로 환승하는 최적 경로를 한 화면에 안내합니다.</p>
+      </div>
+
+      <!-- Left: Real Coex Timeline Card / Right: Summary Info -->
+      <div style="display: grid; grid-template-columns: 780px 400px; gap: 32px; align-items: center; width: 100%; max-width: 1240px;">
+        <!-- Real Coex Card Screenshot (Focused on Transit Steps - Ultra HD) -->
+        <div class="real-ui-frame" style="height: 550px; background: #070d18; border-color: rgba(56, 189, 248, 0.45); box-shadow: 0 0 50px rgba(56, 189, 248, 0.25);">
+          <img src="/promo_assets/real_coex_route_card.png" alt="코엑스 출발 실제 연계 경로 타임라인" style="object-fit: cover; object-position: center top; width: 100%; height: 100%;">
+        </div>
+
+        <div class="glass-card" style="padding: 32px; text-align: left; display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 13px; font-weight: 800; padding: 6px 14px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">🥇 스마트 추천 경로</span>
+            <span style="font-size: 13px; font-weight: 800; padding: 6px 14px; border-radius: 10px; background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4);">사내 무료 셔틀 환승</span>
+          </div>
+          <h3 style="font-size: 26px; font-weight: 900; color: #fff;">07:30 코엑스 출발 ➔ 08:15 사옥 도착</h3>
+          <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+            • <b>코엑스</b> 버스 이동 ➔ 9호선/신분당선 환승<br>
+            • <b>판교역</b> 도착 후 08:00 사내 셔틀(무료) 탑승<br>
+            • <b>인피니티타워 사옥</b> 앞 정문 직행 도착!
+          </p>
+          <div style="padding: 12px 16px; border-radius: 12px; background: rgba(6, 78, 59, 0.3); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 13px; font-weight: 700;">
+            ✓ 국토부·서울시 실시간 도착정보 연동 (당역 진입 배지)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 3-2: FEATURE 02 - REAL SEARCH FORM (DUAL MODES) ================= -->
+    <div id="scene-3-2" class="scene feature-scene">
+      <div class="feature-step-indicator">
+        <span class="step-pill">01 연계 경로 추천</span>
+        <span class="step-pill current">02 맞춤 시간대 탐색</span>
+        <span class="step-pill">03 현장 사진 안내</span>
+        <span class="step-pill">04 전체 노선도</span>
+        <span class="step-pill">05 시간표 & 즐겨찾기</span>
+      </div>
+      <div class="feature-header">
+        <span class="feature-badge-num">FEATURE 02</span>
+        <h2 class="feature-title gradient-text">출·퇴근 모드 전환 &amp; 맞춤 시간대 탐색</h2>
+        <p class="feature-desc">사옥 도착 희망 시간 또는 퇴근 시간에 맞춰 탈 수 있는 셔틀과 통근 스케줄을 즉시 탐색합니다.</p>
+      </div>
+
+      <!-- Real UI: Dual Modes (Inbound 08:30 vs Outbound 18:00) Full Size & Sharp -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 1220px;">
+        <div style="display: grid; grid-template-columns: 590px 590px; gap: 32px; width: 100%;">
+          <!-- Left: Real Inbound Search Mode -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 16px; border-radius: 12px; background: rgba(59, 130, 246, 0.2); border: 1.5px solid rgba(59, 130, 246, 0.5); font-size: 15px; font-weight: 800; color: #60a5fa;">
+              <span>🌅</span> 오늘 출근 모드 (회사 도착 08:30 기준 맞춤 안내)
+            </div>
+            <div class="real-ui-frame" style="height: 365px; background: #070d18; border-color: rgba(59, 130, 246, 0.4);">
+              <img src="/promo_assets/real_search_form_inbound.png" alt="실제 오늘 출근 모드 검색 화면" style="object-fit: cover; width: 100%; height: 100%;">
+            </div>
+          </div>
+
+          <!-- Right: Real Outbound Search Mode -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 16px; border-radius: 12px; background: rgba(168, 85, 247, 0.2); border: 1.5px solid rgba(168, 85, 247, 0.5); font-size: 15px; font-weight: 800; color: #c084fc;">
+              <span>🌃</span> 오늘 퇴근 모드 (회사 출발 18:00 기준 직통)
+            </div>
+            <div class="real-ui-frame" style="height: 365px; background: #070d18; border-color: rgba(168, 85, 247, 0.4);">
+              <img src="/promo_assets/real_search_form_outbound.png" alt="실제 오늘 퇴근 모드 검색 화면" style="object-fit: cover; width: 100%; height: 100%;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Full-Width Bottom Highlights Banner -->
+        <div class="glass-card" style="width: 100%; padding: 16px 26px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(56, 189, 248, 0.35);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <span style="font-size: 26px;">⏱️</span>
+            <div style="text-align: left;">
+              <div style="font-size: 16px; font-weight: 800; color: #fff;">희망 도착 시간 맞춤 탐색 &amp; 퇴근 셔틀 최우선 직통 매칭</div>
+              <div style="font-size: 13px; color: #cbd5e1; margin-top: 3px;">희망 도착 시각(08:30)에 맞춘 최적 출발 시각 안내 · 퇴근 시 사옥 승차장 출발 판교·야탑 셔틀 1순위 추천</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <span style="padding: 6px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; font-size: 13px; color: #38bdf8; font-weight: 700;">📍 GPS 위치</span>
+            <span style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; font-size: 13px; color: #cbd5e1; font-weight: 600;">판교역</span>
+            <span style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; font-size: 13px; color: #cbd5e1; font-weight: 600;">야탑역</span>
+            <span style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; font-size: 13px; color: #cbd5e1; font-weight: 600;">강남역</span>
+            <span style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; font-size: 13px; color: #cbd5e1; font-weight: 600;">잠실역</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 3-3: FEATURE 03 - PANGYO & HQ BOARDING LOCATION PHOTOS (HIGH RES) ================= -->
+    <div id="scene-3-3" class="scene feature-scene">
+      <div class="feature-step-indicator">
+        <span class="step-pill">01 연계 경로 추천</span>
+        <span class="step-pill">02 맞춤 시간대 탐색</span>
+        <span class="step-pill current">03 현장 사진 안내</span>
+        <span class="step-pill">04 전체 노선도</span>
+        <span class="step-pill">05 시간표 & 즐겨찾기</span>
+      </div>
+      <div class="feature-header">
+        <span class="feature-badge-num">FEATURE 03</span>
+        <h2 class="feature-title gradient-text">실제 현장 탑승 위치 사진 안내</h2>
+        <p class="feature-desc">실제 도로뷰 사진과 지도 화살표로 셔틀 탑승 장소를 헤매지 않도록 확실하게 안내합니다.</p>
+      </div>
+
+      <!-- 2 High-Resolution Boarding Photo Showcase Cards (Left: Station Boarding / Right: HQ Boarding) -->
+      <div style="display: grid; grid-template-columns: 590px 590px; gap: 32px; align-items: stretch; width: 100%; max-width: 1220px;">
+        
+        <!-- Left Card: 거점역 탑승 위치 안내 (판교역 1번 출구) - High-Res Photo + Map Overlay -->
+        <div class="glass-card" style="padding: 24px; border-color: rgba(52, 211, 153, 0.55); box-shadow: 0 15px 45px rgba(0,0,0,0.6), 0 0 35px rgba(52, 211, 153, 0.2); display: flex; flex-direction: column; justify-content: space-between; text-align: left;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.18); border: 1px solid rgba(52, 211, 153, 0.4); padding: 4px 14px; border-radius: 9999px;">
+                거점역 셔틀 환승 위치 실사
+              </span>
+              <span style="font-size: 12.5px; font-weight: 700; color: #94a3b8;">
+                판교역 ↔ 사옥 셔틀
+              </span>
+            </div>
+            <h3 style="font-size: 23px; font-weight: 900; color: #fff; margin-bottom: 14px;">
+              판교역 1번 출구 북문광장 앞 셔틀 승강장
+            </h3>
+            
+            <!-- High-Res Boarding Photo Frame -->
+            <div style="position: relative; height: 255px; border-radius: 16px; overflow: hidden; border: 1.5px solid rgba(52, 211, 153, 0.4); box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 14px; background: #000;">
+              <img src="/images/boarding/pangyo.jpg" alt="판교역 1번출구 셔틀 승강장 실사 및 지도" style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; image-rendering: high-quality;">
+              <div style="position: absolute; bottom: 10px; right: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(52, 211, 153, 0.4); font-size: 11.5px; font-weight: 700; color: #34d399;">
+                실제 카카오 로드뷰 &amp; 보행 동선 화살표
+              </div>
+            </div>
+            
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.55; margin: 0;">
+              신분당선 판교역 1번 출구 나와 북문광장 직진, 투썸플레이스 건물 앞 버스 전용 승강장(빨간 화살표)에서 탑승합니다.
+            </p>
+          </div>
+          
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #34d399; font-weight: 700;">
+            <span>💡 출근 집중 시간(08:00~08:40) 5분 전 대기 권장</span>
+            <span style="color: #94a3b8; font-weight: 500;">✓ 카카오맵 로드뷰 연동</span>
+          </div>
+        </div>
+
+        <!-- Right Card: 사옥 승하차장 실사 (인피니티타워) - High-Res Photo -->
+        <div class="glass-card" style="padding: 24px; border-color: rgba(56, 189, 248, 0.55); box-shadow: 0 15px 45px rgba(0,0,0,0.6), 0 0 35px rgba(56, 189, 248, 0.2); display: flex; flex-direction: column; justify-content: space-between; text-align: left;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 14px; border-radius: 9999px;">
+                사옥 도착 및 퇴근 탑승 실사
+              </span>
+              <span style="font-size: 12.5px; font-weight: 700; color: #94a3b8;">
+                전 노선 1~9호차 통근버스
+              </span>
+            </div>
+            <h3 style="font-size: 23px; font-weight: 900; color: #fff; margin-bottom: 14px;">
+              판교 사옥 (인피니티타워) 승하차장 실사
+            </h3>
+
+            <!-- High-Res HQ Boarding Photo Frame (Full 1024x608 Crisp Image) -->
+            <div style="position: relative; height: 255px; border-radius: 16px; overflow: hidden; border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 14px; background: #000;">
+              <img src="/images/boarding/suresoft-hq.jpg" alt="판교 사옥 인피니티타워 승하차장 고화질 실사" style="width: 100%; height: 100%; object-fit: cover; object-position: center bottom; display: block; image-rendering: high-quality;">
+              <div style="position: absolute; bottom: 10px; right: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11.5px; font-weight: 700; color: #38bdf8;">
+                사옥 정문 앞 승하차 전용 구역 표시
+              </div>
+            </div>
+
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.55; margin: 0;">
+              맞은편 지란지교 건물 앞 횡단보도 옆 승하차 전용 구역(빨간 원 &amp; 화살표)에서 안전하게 승하차 및 퇴근 버스 탑승!
+            </p>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #38bdf8; font-weight: 700;">
+            <span>🏢 판교 사옥 (성남시 수정구 금토로80번길 37)</span>
+            <span style="color: #94a3b8; font-weight: 500;">✓ 30여 개 전 정류장 실사 완비</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= SCENE 3-4: FEATURE 04 - REAL KAKAO MAP ROUTE VISUALIZATION ================= -->
+    <div id="scene-3-4" class="scene feature-scene">
+      <div class="feature-step-indicator">
+        <span class="step-pill">01 연계 경로 추천</span>
+        <span class="step-pill">02 맞춤 시간대 탐색</span>
+        <span class="step-pill">03 현장 사진 안내</span>
+        <span class="step-pill current">04 전체 노선도</span>
+        <span class="step-pill">05 시간표 & 즐겨찾기</span>
+      </div>
+      <div class="feature-header">
+        <span class="feature-badge-num">FEATURE 04</span>
+        <h2 class="feature-title gradient-text">카카오 지도 기반 전체 노선도 시각화</h2>
+        <p class="feature-desc">판교 사옥을 중심으로 운행되는 8대 사내 셔틀 및 권역별 통근버스를 실제 카카오 지도에서 확인합니다.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 800px 380px; gap: 32px; align-items: center; width: 100%; max-width: 1240px;">
+        <!-- Real Kakao Map Screenshot with HQ Pin, Stations & Route Lines -->
+        <div class="real-ui-frame" style="height: 530px; border-color: rgba(56, 189, 248, 0.5); box-shadow: 0 0 50px rgba(56, 189, 248, 0.3);">
+          <img src="/promo_assets/real_kakao_map_view.png" alt="실제 카카오 지도 기반 전체 노선도 화면" style="object-fit: cover; object-position: center 30%; width: 100%; height: 100%;">
+        </div>
+
+        <div class="glass-card" style="padding: 32px; text-align: left; display: flex; flex-direction: column; gap: 18px;">
+          <div style="font-size: 13px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 12px; border-radius: 8px; width: fit-content;">
+            카카오 공식 지도 연동
+          </div>
+          <h4 style="font-size: 24px; font-weight: 800; color: #fff; line-height: 1.35;">
+            사옥 중심 실시간<br>통근망 지도 시각화
+          </h4>
+          <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+            판교 사옥(인피니티타워)을 중심으로 판교·야탑 셔틀 및 잠실, 강남, 신도림 등 모든 통근망의 이동 동선과 정류소 위치를 실제 지도 위에서 직관적으로 파악합니다.
+          </p>
+          <div style="font-size: 13px; color: #94a3b8; display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <span>✓ 정류장 핀 클릭 시 상세 승차 위치 및 배차 시간 즉시 팝업</span>
+            <span>✓ 실시간 카카오 정밀 지도 타일 및 경로 라인 렌더링</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 3-5: FEATURE 05 - REAL TIMETABLE & FAVORITES ================= -->
+    <div id="scene-3-5" class="scene feature-scene">
+      <div class="feature-step-indicator">
+        <span class="step-pill">01 연계 경로 추천</span>
+        <span class="step-pill">02 맞춤 시간대 탐색</span>
+        <span class="step-pill">03 현장 사진 안내</span>
+        <span class="step-pill">04 전체 노선도</span>
+        <span class="step-pill current">05 시간표 & 즐겨찾기</span>
+      </div>
+      <div class="feature-header">
+        <span class="feature-badge-num">FEATURE 05</span>
+        <h2 class="feature-title gradient-text">전 노선 시간표 조회 &amp; 원클릭 즐겨찾기</h2>
+        <p class="feature-desc">엑셀 공지 파일 없이도 출·퇴근 시간표를 즉시 확인하고 자주 쓰는 경로를 저장합니다.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 780px 400px; gap: 32px; align-items: center; width: 100%; max-width: 1220px;">
+        <div class="real-ui-frame" style="height: 530px; background: #070d18;">
+          <img src="/promo_assets/real_timetable.png" alt="실제 시간표 조회 화면" style="object-fit: contain; width: 100%; height: 100%;">
+        </div>
+
+        <div style="text-align: left; display: flex; flex-direction: column; gap: 20px;">
+          <div class="glass-card" style="padding: 26px;">
+            <div style="font-size: 13px; font-weight: 800; color: #38bdf8; margin-bottom: 6px;">🕒 출·퇴근 방향별 시간표</div>
+            <h4 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;">전 노선 호차별 정류장 시간표</h4>
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.5;">
+              1호차부터 9호차까지 정류장별 경유 시각을 엑셀 파일 없이 웹에서 1초 만에 확인합니다.
+            </p>
+          </div>
+
+          <div class="glass-card" style="padding: 26px;">
+            <div style="display: inline-block; font-size: 13px; font-weight: 800; color: #f59e0b; margin-bottom: 6px;">⭐ 즐겨찾기 원클릭 재탐색</div>
+            <h4 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;">[집 ➔ 사옥] 원클릭 길찾기</h4>
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.5;">
+              자주 이용하는 출퇴근 경로를 별표 하나로 저장하고, 매일 아침 터치 한 번으로 최신 실시간 정보를 재검색합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 4: OUTRO (POLISHED FOR EXHIBITION) ================= -->
+    <div id="scene-4" class="scene">
+      <!-- Mascot Emblem Badge (Same as Brochure) -->
+      <div style="width: 108px; height: 108px; border-radius: 26px; background: #ffffff; border: 2px solid rgba(56, 189, 248, 0.7); box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35); overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <img src="/images/mascot/surebus_driver_mascot_speech.png" alt="슈어버스 공식 마스코트" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.12); display: block;">
+      </div>
+
+      <div style="display: inline-flex; align-items: center; gap: 10px; padding: 7px 22px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 15px; font-weight: 800; margin-bottom: 14px;">
+        <span>🏢</span> 슈어소프트 판교 사옥 모빌리티 솔루션
+      </div>
+      <h1 class="gradient-text" style="font-size: 50px; font-weight: 900; margin-bottom: 10px; letter-spacing: -1.5px;">
+        출근길 스트레스는 줄이고, 아침 여유는 늘리세요.
+      </h1>
+      <p style="font-size: 20px; color: #94a3b8; font-weight: 400; margin-bottom: 30px;">
+        사내 셔틀과 대중교통의 완벽한 조화, 스마트한 출퇴근 파트너 <b style="color: #38bdf8;">슈어버스</b>
+      </p>
+
+      <!-- 3 Key Benefits Cards (User Selected Polish) -->
+      <div class="s4-cards-grid" style="margin-bottom: 32px;">
+        <div class="glass-card s4-card">
+          <div class="s4-card-icon icon-blue">⚡</div>
+          <h3 class="s4-card-title">최적 경로 추천</h3>
+          <p class="s4-card-desc">사내 무료 셔틀과 지하철·버스를 실시간 조합해 최단 시간 출퇴근길 안내</p>
+        </div>
+        <div class="glass-card s4-card">
+          <div class="s4-card-icon icon-emerald">📍</div>
+          <h3 class="s4-card-title">실제 탑승 위치 안내</h3>
+          <p class="s4-card-desc">판교역 거점 승강장부터 사옥 승하차장까지 실제 현장 사진으로 완벽 가이드</p>
+        </div>
+        <div class="glass-card s4-card">
+          <div class="s4-card-icon icon-purple">🗺️</div>
+          <h3 class="s4-card-title">통근·셔틀 노선 가이드</h3>
+          <p class="s4-card-desc">카카오 지도 기반 전체 셔틀 노선도와 정류장별 상세 탑승 팁 제공</p>
+        </div>
+      </div>
+
+      <!-- Ending CTA & Polished Official Logo Footer (NO GRAY BOX) -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 18px;">
+        <div class="cta-btn">
+          <span>🚀 지금 바로 스마트한 출근길을 경험해보세요</span>
+          <span style="font-size: 26px;">➔</span>
+        </div>
+
+        <!-- Clean Official Brand Badge & SDV Team 4 -->
+        <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
+          <div style="background: #ffffff; padding: 6px 18px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; align-items: center;">
+            <img src="/suresoft_logo.png" alt="SURESOFT" style="height: 20px; display: block;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: #94a3b8; font-weight: 600;">
+            <span style="color: #64748b;">|</span>
+            <span style="color: #f1f5f9; font-weight: 800;">슈어버스 (SureBus)</span>
+            <span style="color: #64748b;">|</span>
+            <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 9999px;">PROJECT</span>
+            <span style="color: #f1f5f9; font-weight: 800;">SDV솔루션4팀 제작</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Bar at bottom -->
+  <div id="progress-bar"></div>
+
+  <script>
+    // Ambient Particle Canvas (Sand/Sprite Tech Dots)
+    const canvas = document.getElementById('canvas-particles');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = 1920;
+    let height = canvas.height = 1080;
+
+    const particles = [];
+    const PARTICLE_COUNT = 100;
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 2 + 0.8,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.5 + 0.2,
+        color: Math.random() > 0.4 ? '#38bdf8' : (Math.random() > 0.5 ? '#34d399' : '#818cf8')
+      });
+    }
+
+    function renderParticles() {
+      ctx.clearRect(0, 0, width, height);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(renderParticles);
+    }
+    renderParticles();
+
+    // Scene Orchestration Timeline (Total Duration: 37.5 seconds - Exhibition Fast Paced)
+    const scenes = [
+      { id: 'scene-1',   start: 0,     end: 3800 },  // 0s ~ 3.8s (Opening)
+      { id: 'scene-2',   start: 3800,  end: 8400 },  // 3.8s ~ 8.4s (Branding & Solution - Coex Real Screen)
+      { id: 'scene-3-1', start: 8400,  end: 13200 }, // 8.4s ~ 13.2s (Feature 01: 대중교통+셔틀 연계 타임라인)
+      { id: 'scene-3-2', start: 13200, end: 18000 }, // 13.2s ~ 18.0s (Feature 02: 출퇴근 검색 폼 듀얼 모드)
+      { id: 'scene-3-3', start: 18000, end: 22800 }, // 18.0s ~ 22.8s (Feature 03: 실제 판교역 및 사옥 승차장 실사)
+      { id: 'scene-3-4', start: 22800, end: 27600 }, // 22.8s ~ 27.6s (Feature 04: 실제 카카오 지도 노선도 시각화)
+      { id: 'scene-3-5', start: 27600, end: 32200 }, // 27.6s ~ 32.2s (Feature 05: 실제 시간표 & 즐겨찾기)
+      { id: 'scene-4',   start: 32200, end: 37500 }  // 32.2s ~ 37.5s (Outro & CTA)
+    ];
+
+    const TOTAL_DURATION = 37500;
+    let startTime = null;
+
+    function tick(timestamp) {
+      if (window.__disableTick) return;
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+
+      // Update progress bar
+      const progress = Math.min(100, (elapsed / TOTAL_DURATION) * 100);
+      document.getElementById('progress-bar').style.width = progress + '%';
+
+      // Update active scene
+      for (const sc of scenes) {
+        const el = document.getElementById(sc.id);
+        if (el) {
+          if (elapsed >= sc.start && elapsed < sc.end) {
+            if (!el.classList.contains('active')) {
+              el.classList.add('active');
+            }
+          } else {
+            if (el.classList.contains('active')) {
+              el.classList.remove('active');
+            }
+          }
+        }
+      }
+
+      if (elapsed < TOTAL_DURATION) {
+        requestAnimationFrame(tick);
+      } else {
+        window.__promoVideoFinished = true;
+      }
+    }
+
+    // Start playback
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

@@ -12,11 +12,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
+        {/* Brand Logo with Official Driver Mascot Badge */}
         <div 
           onClick={() => setActiveTab('search')}
           className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
         >
+          {/* Mascot Emblem Badge */}
+          <div className="h-9 w-9 rounded-xl bg-white border border-sky-400/60 shadow-md shadow-sky-500/15 overflow-hidden flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-sky-500/30 transition-all">
+            <img 
+              src="/images/mascot/surebus_driver_mascot_speech.png" 
+              alt="슈어버스 마스코트" 
+              className="h-full w-full object-contain scale-110 block"
+            />
+          </div>
+
           {/* SURESOFT Official Logo Badge */}
           <div className="h-9 px-3 py-1.5 bg-white rounded-xl shadow-md shadow-blue-500/10 border border-white/60 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-blue-500/30 transition-all">
             <img 
@@ -27,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               height={194}
             />
           </div>
+
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="font-black text-base sm:text-lg bg-gradient-to-r from-white via-slate-100 to-sky-200 bg-clip-text text-transparent tracking-tight whitespace-nowrap">

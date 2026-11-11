@@ -165,6 +165,13 @@ export const App: React.FC = () => {
     setSearchParams(newParams);
   };
 
+  // 프로모 영상 및 자동화 캡처용 글로벌 검색 트리거
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__triggerSearch = handleSearch;
+    }
+  }, [searchParams]);
+
   const handleSelectMapRoute = (cand: RouteCandidate) => {
     setSelectedCandidate(cand);
     const mapEl = document.getElementById('map-view-section');
@@ -217,25 +224,56 @@ export const App: React.FC = () => {
 
     // 2. 정렬 옵션 적용
     if (sortBy === 'fastest') {
-      list.sort((a, b) => a.totalDurationMinutes - b.totalDurationMinutes);
+      // 1순위: 총 소요시간, 2순위: 도보 시간
+      list.sort((a, b) => a.totalDurationMinutes - b.totalDurationMinutes || (a.walkMinutes - b.walkMinutes));
     } else if (sortBy === 'min_walk') {
-      list.sort((a, b) => {
-        if (a.walkMinutes !== b.walkMinutes) {
-          return a.walkMinutes - b.walkMinutes;
-        }
-        return a.totalDurationMinutes - b.totalDurationMinutes;
-      });
+      // 1순위: 도보 시간, 2순위: 총 소요시간
+      list.sort((a, b) => (a.walkMinutes - b.walkMinutes) || (a.totalDurationMinutes - b.totalDurationMinutes));
     } else if (sortBy === 'min_transfer') {
+      // 1순위: 환승 횟수, 2순위: 총 소요시간
+      list.sort((a, b) => (a.transferCount - b.transferCount) || (a.totalDurationMinutes - b.totalDurationMinutes));
+    } else {
+      // 'recommended' 추천순:
+      // score 기준 오름차순 정렬 (최소 소요시간 + 도보 가중치 + 환승 가중치 반영)
       list.sort((a, b) => {
-        if (a.transferCount !== b.transferCount) {
-          return a.transferCount - b.transferCount;
-        }
-        return a.totalDurationMinutes - b.totalDurationMinutes;
+        const scoreA = a.score ?? (a.totalDurationMinutes + a.walkMinutes * 0.5 + a.transferCount * 5);
+        const scoreB = b.score ?? (b.totalDurationMinutes + b.walkMinutes * 0.5 + b.transferCount * 5);
+        return scoreA - scoreB;
       });
     }
-    // 'recommended'는 이미 자체 스코어 및 셔틀 우대 우선순위가 반영된 기본 정렬을 유지합니다.
 
-    return list;
+    // 3. 현재 표시 목록의 1위 항목에 맞춤 하이라이트 배지 동적 부여
+    return list.map((cand, idx) => {
+      let updatedBadges = [...cand.badges];
+      
+      // 추천순 모드일 때 1위에게 'recommend' 배지 부여
+      if (sortBy === 'recommended') {
+        if (idx === 0) {
+          if (!updatedBadges.includes('recommend')) {
+            updatedBadges = ['recommend', ...updatedBadges.filter(b => b !== 'recommend')];
+          }
+        } else {
+          updatedBadges = updatedBadges.filter(b => b !== 'recommend');
+        }
+      } else if (sortBy === 'fastest') {
+        if (idx === 0) {
+          if (!updatedBadges.includes('fastest')) {
+            updatedBadges = ['fastest', ...updatedBadges.filter(b => b !== 'fastest')];
+          }
+        }
+      } else if (sortBy === 'min_walk') {
+        if (idx === 0) {
+          if (!updatedBadges.includes('min_walk')) {
+            updatedBadges = ['min_walk', ...updatedBadges.filter(b => b !== 'min_walk')];
+          }
+        }
+      }
+
+      return {
+        ...cand,
+        badges: updatedBadges
+      };
+    });
   }, [candidates, filterCategory, sortBy]);
 
   // 필터/정렬 변경 시 현재 선택된 후보가 표시 목록에 없으면 첫 번째 후보 자동 선택
@@ -257,15 +295,25 @@ export const App: React.FC = () => {
         {/* Tab 1: Route Search & Recommendations */}
         {activeTab === 'search' && (
           <div className="space-y-6">
-            {/* Quick Hero Banner */}
-            <div className="glass-panel p-5 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-slate-950 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-              <div>
-                <h2 className="text-lg sm:text-xl font-black text-white">
-                  내 위치에서 가장 효율적인 출퇴근 경로
-                </h2>
-                <p className="text-xs text-slate-300 mt-1">
-                  사내 통근버스 · 무료 셔틀 · 수도권 전철 · 연계 시내버스를 종합 분석하여 가장 빠른 경로를 스마트 추천합니다.
-                </p>
+            {/* Quick Hero Banner with Official Mascot */}
+            <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-slate-950 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-center gap-4">
+                {/* Official Driver Mascot Rounded Emblem */}
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-sky-400/60 shadow-lg shadow-sky-500/20 overflow-hidden flex items-center justify-center shrink-0">
+                  <img 
+                    src="/images/mascot/surebus_driver_mascot_speech.png" 
+                    alt="슈어버스 공식 마스코트" 
+                    className="w-full h-full object-contain scale-110" 
+                  />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-white">
+                    사옥 출퇴근도 스마트하게, 슈어버스
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                    회사 셔틀/통근 버스와 수도권 대중교통(지하철·버스)을 실시간으로 조합해 집 앞에서 사옥 책상까지 가장 빠르고 편리한 최적의 경로를 한 번에 안내합니다.
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800 shrink-0 text-xs">
                 <PhoneCall className="w-4 h-4 text-amber-400 shrink-0" />
@@ -303,8 +351,8 @@ export const App: React.FC = () => {
 
               {/* Right Column: Search Results */}
               <div className="lg:col-span-8 space-y-4">
-                {/* ── API 쿼터 소진 알림 배너 ── */}
-                {quotaStatus.isExceeded && (
+                {/* ── API 쿼터 소진 알림 배너 (클린 모드/프로모 영상 시 숨김) ── */}
+                {quotaStatus.isExceeded && !window.location.search.includes('clean') && !window.location.search.includes('promo') && (
                   <div className="p-4 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-950/60 via-slate-900/90 to-amber-950/40 shadow-lg">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 text-rose-400 font-bold text-base">
@@ -344,16 +392,16 @@ export const App: React.FC = () => {
                   </span>
                 </div>
 
-                {/* ── 상단 빠른 필터 & 정렬 컨트롤 바 ── */}
+                {/* ── 상단 빠른 필터 & 정렬 컨트롤 바 (완벽한 좌측 수직 정렬 & 균형 레이아웃) ── */}
                 {candidates.length > 0 && (
-                  <div className="glass-panel p-3.5 rounded-2xl border border-slate-800/90 bg-slate-900/70 shadow-lg space-y-3">
+                  <div className="glass-panel p-4 rounded-2xl border border-slate-800/90 bg-slate-900/70 shadow-lg space-y-3">
                     {/* 상단 탭: 경로 유형 필터 (전체 / 사내 셔틀·통근 / 일반 대중교통) */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/70">
-                      <div className="flex items-center gap-2">
-                        <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4 pb-3 border-b border-slate-800/70">
+                      <div className="flex items-center gap-2 sm:w-24 shrink-0">
+                        <SlidersHorizontal className="w-4 h-4 text-indigo-400 shrink-0" />
                         <span className="text-xs font-bold text-slate-300">경로 필터</span>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap flex-1">
                         {/* 1. 전체 보기 */}
                         <button
                           type="button"
@@ -413,20 +461,20 @@ export const App: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 하단 정렬: 추천순, 최단시간, 최소도보, 최소환승 */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-0.5">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="text-xs font-semibold text-slate-400">정렬 기준</span>
+                    {/* 하단 정렬: 추천순, 최단시간, 최소도보, 최소환승 (상단 필터와 완벽 좌측 정렬 일치) */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4 pt-0.5">
+                      <div className="flex items-center gap-2 sm:w-24 shrink-0">
+                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-300">정렬 기준</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5">
+                      <div className="flex items-center gap-2 flex-wrap flex-1">
                         <button
                           type="button"
                           onClick={() => setSortBy('recommended')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             sortBy === 'recommended'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold shadow-sm'
-                              : 'bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 font-bold shadow-md shadow-amber-500/10 ring-1 ring-amber-500/30'
+                              : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
                           }`}
                         >
                           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -436,10 +484,10 @@ export const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSortBy('fastest')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             sortBy === 'fastest'
-                              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 font-bold shadow-sm'
-                              : 'bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800'
+                              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/60 font-bold shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500/30'
+                              : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
                           }`}
                         >
                           <Zap className="w-3.5 h-3.5 text-indigo-400" />
@@ -449,10 +497,10 @@ export const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSortBy('min_walk')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             sortBy === 'min_walk'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 font-bold shadow-sm'
-                              : 'bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 font-bold shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/30'
+                              : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
                           }`}
                         >
                           <Footprints className="w-3.5 h-3.5 text-emerald-400" />
@@ -462,10 +510,10 @@ export const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSortBy('min_transfer')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             sortBy === 'min_transfer'
-                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-sm'
-                              : 'bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800'
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/60 font-bold shadow-md shadow-cyan-500/10 ring-1 ring-cyan-500/30'
+                              : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
                           }`}
                         >
                           <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
@@ -557,12 +605,26 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p className="font-semibold text-slate-400">
-          슈어 출퇴근 최적 경로 서비스
-        </p>
+      <footer className="mt-auto border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500 space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-white overflow-hidden border border-sky-400/50 shadow-sm flex items-center justify-center shrink-0">
+            <img 
+              src="/images/mascot/surebus_driver_mascot_speech.png" 
+              alt="슈어버스" 
+              className="w-full h-full object-contain scale-110 block" 
+            />
+          </div>
+          <span className="font-bold text-slate-200 text-sm">슈어버스 (SureBus)</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400 font-medium">판교 사옥 스마트 출퇴근 솔루션</span>
+          <span className="text-slate-600">|</span>
+          <span className="px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/35 text-sky-400 text-[10px] font-bold">
+            PROJECT
+          </span>
+          <span className="font-bold text-slate-200">SDV솔루션4팀 제작</span>
+        </div>
         <p className="text-[11px] text-slate-600">
-          실제 버스시간표__최종공지.xlsx 데이터 기반 | 개정일: 2026.08.03 | 운송사 문의: 동영관광 010-9800-2542
+          실제 버스시간표__최종공지.xlsx 데이터 기반 · 수도권 8대 통근망 및 사내 셔틀 실시간 연계
         </p>
       </footer>
     </div>

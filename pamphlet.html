@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>슈어버스 (SureBus) 공식 A4 원페이지 브로슈어</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #090d16;
+      color: #f8fafc;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* Print Controls Floating Header */
+    .no-print-toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 999;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 9999px;
+      padding: 8px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .print-btn {
+      padding: 6px 18px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 800;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.2s ease;
+    }
+    .print-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.6);
+    }
+
+    /* A4 Single Page Specifications: 210mm x 297mm (Exactly 1 Page, Zero White Gaps) */
+    .a4-page {
+      width: 210mm;
+      height: 297mm;
+      max-height: 297mm;
+      background: #070c18;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10mm 12mm 9mm 12mm;
+    }
+
+    /* Ambient Glow Effects */
+    .ambient-glow {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(80px);
+      z-index: 1;
+    }
+    .glow-cyan {
+      width: 340px;
+      height: 340px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
+      top: -60px;
+      right: -60px;
+    }
+    .glow-indigo {
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      bottom: -70px;
+      left: -70px;
+    }
+
+    .page-content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 9px;
+    }
+
+    /* Typography */
+    .gradient-text {
+      background: linear-gradient(135deg, #ffffff 20%, #e2e8f0 60%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .neon-cyan { color: #38bdf8; }
+    .neon-emerald { color: #34d399; }
+    .neon-amber { color: #fbbf24; }
+
+    /* 1. Header Bar */
+    .brochure-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding-bottom: 6px;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .suresoft-badge {
+      background: #ffffff;
+      padding: 4px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .suresoft-badge img {
+      height: 16px;
+      display: block;
+    }
+    .service-tag {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+    .header-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* 2. Hero Section: Refined Layout with Rounded Mascot Badge */
+    .hero-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.6) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 18px;
+      padding: 12px 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Rounded Mascot Emblem: Reverted to Previous Clean Version (User Requested) */
+    .mascot-rounded-badge {
+      width: 114px;
+      height: 114px;
+      border-radius: 26px;
+      background: #ffffff;
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.25);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mascot-rounded-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: scale(1.12);
+      display: block;
+    }
+
+    .hero-text-wrap {
+      flex: 1;
+      text-align: left;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2.5px 11px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+    .hero-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      line-height: 1.25;
+      margin-bottom: 5px;
+    }
+    .hero-def {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    /* 3. Three Core Pillars (User Specified Copy) */
+    .core-pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+    }
+    .pillar-card {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 11px 14px;
+      text-align: left;
+    }
+    .pillar-card.p-blue {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.14) 0%, rgba(15, 23, 42, 0.88) 100%);
+    }
+    .pillar-card.p-emerald {
+      border-color: rgba(52, 211, 153, 0.45);
+      background: linear-gradient(180deg, rgba(52, 211, 153, 0.14) 0%, rgba(15, 23, 42, 0.88) 100%);
+    }
+    .pillar-card.p-purple {
+      border-color: rgba(167, 139, 250, 0.45);
+      background: linear-gradient(180deg, rgba(167, 139, 250, 0.14) 0%, rgba(15, 23, 42, 0.88) 100%);
+    }
+    .pillar-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .pillar-icon {
+      font-size: 16px;
+    }
+    .pillar-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+    .pillar-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.42;
+    }
+
+    /* 4. Large Visual Showcase (Expanded to 325px - Shows Long Timeline & Wide Map) */
+    .showcase-dual-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .showcase-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .box-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      gap: 6px;
+    }
+    .box-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .box-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    /* Expanded Media Frame (315px height reveals long route timeline steps & wide map) */
+    .box-media-frame {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #020617;
+      height: 315px;
+    }
+    .box-media-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    /* 5. 5-Step Core Features Grid (NO "역산/역계산", Fonts Scaled Up) */
+    .section-divider-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      padding-bottom: 5px;
+    }
+
+    .features-5-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .feature-card-mini {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 108px;
+    }
+    .f-step {
+      font-size: 10px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .f-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+    .f-desc {
+      font-size: 10.8px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* 6. Closing Message / Summary Box (Fonts Scaled Up) */
+    .closing-summary-box {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.28) 0%, rgba(15, 23, 42, 0.94) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      border-radius: 14px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 18px rgba(2, 132, 199, 0.25);
+    }
+    .closing-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .closing-text-wrap {
+      flex: 1;
+    }
+    .closing-title {
+      font-size: 13.5px;
+      font-weight: 900;
+      color: #38bdf8;
+      margin-bottom: 3px;
+    }
+    .closing-desc {
+      font-size: 11.8px;
+      color: #f1f5f9;
+      line-height: 1.5;
+    }
+
+    /* 7. Bottom Footer / Contact Strip */
+    .brochure-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .footer-col {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .footer-label {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .footer-val {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* Print Setup (Exact A4 Single Sheet) */
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      .a4-page {
+        box-shadow: none !important;
+        border: none !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        margin: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-height: 297mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Non-Printing Quick Control Bar -->
+  <div class="no-print-toolbar">
+    <div class="toolbar-title">
+      <span>📄</span>
+      <span>슈어버스 공식 A4 원페이지 브로슈어 (단면 1장 완결형)</span>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      <span>🖨️</span>
+      <span>A4 1장 인쇄 / PDF 저장</span>
+    </button>
+  </div>
+
+  <!-- =========================================================================
+       A4 SINGLE PAGE COMPLETE BROCHURE (단면 1장 완결형)
+       ========================================================================= -->
+  <div class="a4-page">
+    <div class="ambient-glow glow-cyan"></div>
+    <div class="ambient-glow glow-indigo"></div>
+
+    <div class="page-content">
+      <!-- 1. Header Bar -->
+      <div class="brochure-header">
+        <div class="brand-wrap">
+          <div class="suresoft-badge">
+            <img src="/suresoft_logo.png" alt="SURESOFT">
+          </div>
+          <span class="service-tag">판교 사옥 스마트 모빌리티 솔루션</span>
+        </div>
+        <div class="header-pill">
+          <span>⚡</span>
+          <span>사내 셔틀 + 대중교통 원스톱 연계</span>
+        </div>
+      </div>
+
+      <!-- 2. Hero Section: Refined Layout with Rounded Mascot Badge (User Requested) -->
+      <div class="hero-section">
+        <!-- Rounded Mascot Emblem: Reverted to Previous Clean Driver with Speech Bubble -->
+        <div class="mascot-rounded-badge">
+          <img src="/images/mascot/surebus_driver_mascot_speech.png" alt="슈어버스 공식 마스코트">
+        </div>
+
+        <div class="hero-text-wrap">
+          <div class="hero-badge">OFFICIAL COMMUTE GUIDE</div>
+          <h1 class="hero-title">
+            사옥 출퇴근도 스마트하게, <span class="gradient-text">슈어버스</span>
+          </h1>
+          <p class="hero-def">
+            "회사 셔틀/통근 버스와 수도권 대중교통(지하철·버스)을 실시간으로 조합해 집 앞에서 사옥 책상까지 가장 빠르고 편리한 최적의 경로를 한 번에 안내합니다."
+          </p>
+        </div>
+      </div>
+
+      <!-- 3. Three Core Pillars (User Specified Copy) -->
+      <div class="core-pillars-grid">
+        <div class="pillar-card p-blue">
+          <div class="pillar-header">
+            <span class="pillar-icon">⚡</span>
+            <h3 class="pillar-title">최적 경로 추천</h3>
+          </div>
+          <p class="pillar-desc">
+            사내 셔틀/통근버스와 지하철·버스를 실시간 조합해 효율적인 출퇴근길 안내
+          </p>
+        </div>
+
+        <div class="pillar-card p-emerald">
+          <div class="pillar-header">
+            <span class="pillar-icon">📍</span>
+            <h3 class="pillar-title">실제 탑승 위치 안내</h3>
+          </div>
+          <p class="pillar-desc">
+            셔틀/통근 버스 탑승 위치 가이드 제공하여 헷갈리지 않게 이용 가능
+          </p>
+        </div>
+
+        <div class="pillar-card p-purple">
+          <div class="pillar-header">
+            <span class="pillar-icon">🗺️</span>
+            <h3 class="pillar-title">통근·셔틀 노선 가이드</h3>
+          </div>
+          <p class="pillar-desc">
+            카카오 지도 기반 전체 셔틀 노선도와 통근버스 정류장별 상세 탑승 팁 제공
+          </p>
+        </div>
+      </div>
+
+      <!-- 4. Visual Showcase: 232px 대형 프레임으로 상세 환승 추천 스텝 & 와이드 맵 완벽 노출 (빈공간 제로) -->
+      <div class="showcase-dual-row">
+        <!-- Left: Detailed Route Recommendation Steps Timeline -->
+        <div class="showcase-box">
+          <div class="box-title-bar">
+            <span class="box-title">
+              <span>🧭</span> 상세 경로 추천 타임라인 가이드
+            </span>
+            <span class="box-badge">대중교통 + 셔틀 환승 단계</span>
+          </div>
+          <div class="box-media-frame">
+            <img src="/promo_assets/real_coex_route_card.png" alt="상세 경로 추천 타임라인 가이드">
+          </div>
+        </div>
+
+        <!-- Right: Real Kakao Map View (Clean Full Route Map) -->
+        <div class="showcase-box">
+          <div class="box-title-bar">
+            <span class="box-title">
+              <span>🗺️</span> 카카오 지도 전체 노선망 시각화
+            </span>
+            <span class="box-badge">판교 사옥 & 전 노선 정류장</span>
+          </div>
+          <div class="box-media-frame">
+            <img src="/promo_assets/real_kakao_map_view.png" alt="카카오 지도 전체 노선도 시각화">
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 5-Step Core Features Grid (NO "역산/역계산", Removed "SureBus 5-Step Architecture") -->
+      <div>
+        <div class="section-divider-title">
+          <span>스마트 출퇴근을 위한 5가지 핵심 기능</span>
+        </div>
+        <div class="features-5-grid" style="margin-top: 5px;">
+          <!-- 01 -->
+          <div class="feature-card-mini">
+            <div class="f-step">01. 통합 연계</div>
+            <div class="f-title">하이브리드 경로</div>
+            <p class="f-desc">지하철·버스와 사내 셔틀(1~9호차)을 잇는 최적 환승 경로 안내</p>
+          </div>
+          <!-- 02: NO "역산/역계산" -->
+          <div class="feature-card-mini">
+            <div class="f-step">02. 맞춤 탐색</div>
+            <div class="f-title">출·퇴근 시간 안내</div>
+            <p class="f-desc">출근 희망 도착 시간과 퇴근 시간에 맞춰 탈 수 있는 셔틀 스케줄 즉시 추천</p>
+          </div>
+          <!-- 03 -->
+          <div class="feature-card-mini">
+            <div class="f-step">03. 위치 안내</div>
+            <div class="f-title">정류장 상세 가이드</div>
+            <p class="f-desc">처음 타는 정류장도 헷갈리지 않게 승강장 위치와 이용 팁 제공</p>
+          </div>
+          <!-- 04 -->
+          <div class="feature-card-mini">
+            <div class="f-step">04. 전체 노선망</div>
+            <div class="f-title">카카오 지도 노선도</div>
+            <p class="f-desc">수도권 전역 8대 통근·셔틀버스 운행 경로와 정류장 지도 시각화</p>
+          </div>
+          <!-- 05 -->
+          <div class="feature-card-mini">
+            <div class="f-step">05. 원클릭 편의</div>
+            <div class="f-title">시간표 & 즐겨찾기</div>
+            <p class="f-desc">엑셀 파일 없이 웹에서 즉시 확인, 자주 타는 출퇴근길 1초 재검색</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Closing Message / Summary Box (User Requested Polish) -->
+      <div class="closing-summary-box">
+        <div class="closing-icon">✨</div>
+        <div class="closing-text-wrap">
+          <div class="closing-title">스마트한 출퇴근의 시작, 슈어버스와 함께하세요!</div>
+          <p class="closing-desc">
+            복잡한 환승 고민과 출퇴근 스트레스는 줄이고, 아침의 여유는 늘려드립니다. 사내 셔틀과 대중교통의 빈틈없는 연계로 집 앞에서 판교 사옥까지 가장 확실하고 편안한 출퇴근길을 경험해 보세요.
+          </p>
+        </div>
+      </div>
+
+      <!-- 7. Footer Strip: 슈어버스 · SDV솔루션4팀 제작 (User Requested: 연락처/주소 삭제 및 깔끔화) -->
+      <div class="brochure-footer">
+        <div class="footer-brand" style="display: flex; align-items: center; gap: 8px;">
+          <span style="color: #ffffff; font-weight: 800; font-size: 11.5px;">슈어버스 (SureBus)</span>
+          <span style="color: #64748b;">|</span>
+          <span style="color: #94a3b8; font-weight: 600; font-size: 11px;">판교 사옥 스마트 출퇴근 솔루션</span>
+        </div>
+        <div class="footer-creator" style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 10px; font-weight: 800; padding: 2px 10px; border-radius: 9999px;">PROJECT</span>
+          <span style="color: #f1f5f9; font-weight: 800; font-size: 12px; letter-spacing: -0.2px;">SDV솔루션4팀 제작</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

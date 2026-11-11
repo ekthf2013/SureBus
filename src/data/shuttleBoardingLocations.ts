@@ -625,14 +625,14 @@ export const SHUTTLE_BOARDING_LOCATIONS: Record<string, BoardingLocationInfo> = 
   // ── 사옥 (퇴근 시 승차 및 출근 시 하차) ──
   "사옥": {
     id: "hq-infinity",
-    stationName: "사옥 (인피니티타워)",
-    aliasNames: ["사옥", "도착(사옥)", "슈어소프트테크", "판교캠퍼스", "인피니티타워"],
+    stationName: "사옥 (인피니티타워 탑승/하차장)",
+    aliasNames: ["사옥", "도착(사옥)", "사옥 도착", "슈어소프트테크", "슈어소프트", "판교캠퍼스", "인피니티타워", "사옥 승차장", "사옥 하차장", "슈어소프트 사옥", "슈어소프트테크 사옥", "도착(사옥)", "사옥(도착)"],
     routeName: "전 노선 셔틀·통근",
     busType: "shuttle",
-    exactLocation: "경기 성남시 수정구 금토로80번길 37 인피니티타워 E동 정문 앞 셔틀/통근 승차장",
+    exactLocation: "경기 성남시 수정구 금토로80번길 37 인피니티타워 E동 앞 도로변 (횡단보도 옆 승하차 구역)",
     address: "경기 성남시 수정구 금토로80번길 37 인피니티타워 E동",
-    landmarks: "인피니티타워 E동 로비 1층 정문 앞 도로변 셔틀 승강장",
-    tip: "퇴근 시 판교/야탑 셔틀 및 각 권역 통근버스가 정문 앞 승강장에 순서대로 정차합니다.",
+    landmarks: "인피니티타워 E동 맞은편 지란지교 건물 앞 횡단보도 옆 도로변 (빨간 화살표 및 원형 점선 위치)",
+    tip: "출근 시 셔틀/통근버스가 하차하며, 퇴근 시 판교·야탑 셔틀 및 권역별 통근버스가 순서대로 정차하여 승차하는 전용 승강장입니다.",
     imageUrl: "/images/boarding/hq-infinity.jpg",
     coords: { lat: 37.406981, lng: 127.088711 },
     kakaoMapUrl: "https://map.kakao.com/link/to/슈어소프트인피니티타워,37.406981,127.088711"
@@ -789,6 +789,16 @@ export function getCandidateBoardingLocations(candidate: RouteCandidate): Boardi
     if (info && !seenIds.has(info.id)) {
       seenIds.add(info.id);
       result.push(info);
+    }
+
+    // 통근/셔틀 하차 정류장이 사옥인 경우 사옥 탑승/하차장 위치 안내도 함께 제공
+    const dropoffRaw = `${step.dropoffStopName || ''} ${step.subtitle || ''} ${candidate.title || ''}`;
+    if (dropoffRaw.includes('사옥') || dropoffRaw.includes('인피니티') || dropoffRaw.includes('슈어소프트')) {
+      const hqInfo = SHUTTLE_BOARDING_LOCATIONS['사옥'];
+      if (hqInfo && !seenIds.has(hqInfo.id)) {
+        seenIds.add(hqInfo.id);
+        result.push(hqInfo);
+      }
     }
   }
 

@@ -24,6 +24,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchParams, onSearch }
 
   const [isLocating, setIsLocating] = useState(false);
 
+  // searchParams prop 변경 시 내부 상태 동기화
+  useEffect(() => {
+    setOriginName(searchParams.originName);
+    setOriginLat(searchParams.originLat);
+    setOriginLng(searchParams.originLng);
+    setMode(searchParams.mode);
+    setTargetTime(searchParams.targetTime);
+  }, [searchParams]);
+
   // 카카오 장소 검색 자동완성 상태
   const [searchResults, setSearchResults] = useState<KakaoPlaceItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
